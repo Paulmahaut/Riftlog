@@ -18,45 +18,9 @@ defineProps({
 </script>
 
 <template>
-    <button class="button" :disabled="disabled">
-        <component v-if="icon" :is="icon" class="icon" />
+    <button class="w-full h-[70px] flex items-center flex-shrink-0 self-stretch gap-[18px] p-[10px] cursor-pointer  transition-colors duration-200 hover:bg-[var(--buttonNavbar-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed" :disabled="disabled">
+        <component v-if="icon" :is="icon" class="w-[28px] h-[28px]" />
 
-        <span>{{ text }}</span>
+        <span class="font-[var(--inter)] text-[18px] text-white font-[var(--Medium)] tracking-[6%]">{{ text }}</span>
     </button>
 </template>
-
-<style scoped>
-.button {
-    width: 100%;
-    height: 70px;
-
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    align-self: stretch;
-    gap: 18px;
-
-    padding: 10px;
-
-    border: none;
-
-    cursor: pointer;
-}
-
-.icon {
-    width: 28px;
-    height: 28px;
-}
-
-span {
-    font-family: var(--inter);
-    font-size: 18px;
-    font-weight: var(--Medium);
-    letter-spacing: 6%;
-}
-
-.button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-</style>
