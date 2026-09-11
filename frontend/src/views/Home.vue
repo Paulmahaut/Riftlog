@@ -17,7 +17,7 @@ const loading = ref(true)
 const legends = ref([])
 const error = ref(null)
 
-const username = ref('Free Player')
+const username = ref('Ready Player One')
 
 async function load() {
     try {
@@ -72,35 +72,69 @@ onMounted(load)
 
                 <!-- Navigation Buttons -->
                 <div class="flex flex-col"> <!-- "-->
-                    <NavbarButton text="Home" :icon="HomeIcon" :disabled="loading" @click="() => $router.push('/home')"/>
-                    <NavbarButton text="Play" :icon="PlayIcon" :disabled="loading" @click="() => $router.push('/play')"/>
-                    <NavbarButton text="Stats" :icon="StatIcon" :disabled="loading" @click="() => $router.push('/stats')"/>
-                    <NavbarButton text="Decks" :icon="DeckIcon" :disabled="loading" @click="() => $router.push('/decks')"/>
-                    <NavbarButton text="Settings" :icon="ParamIcon" :disabled="loading" @click="() => $router.push('/settings')"/>
+                    <NavbarButton text="Home" :icon="HomeIcon" :disabled="loading" @click="() => $router.push('/home')" />
+                    <NavbarButton text="Play" :icon="PlayIcon" :disabled="loading" @click="() => $router.push('/play')" />
+                    <NavbarButton text="Stats" :icon="StatIcon" :disabled="loading" @click="() => $router.push('/stats')" />
+                    <NavbarButton text="Decks" :icon="DeckIcon" :disabled="loading" @click="() => $router.push('/decks')" />
+                    <NavbarButton text="Settings" :icon="ParamIcon" :disabled="loading" @click="() => $router.push('/settings')" />
                 </div>
             </div>
 
             <!-- Lower Section -->
-            <div class="flex px-[20px] py-[5px] items-center gap-[18px] self-stretch">
+            <div class="flex px-[8px] items-center gap-[18px] self-stretch">
                 <ProfileIcon class="w-[50px] h-[50px]" />
                 <!-- Line -->
                 <div class="w-[2px] rounded-md h-full bg-white"></div>
 
                 <!-- Level Section -->
                 <div class="flex flex-col flex-1 gap-[5px] items-start">
-                    <h3 class="text-white text-[14px] font-[var(--Bold)]">{{ username }}</h3>
+                    <h3 class="w-full text-white text-[14px] text-left font-[var(--Bold)] overflow-x-auto whitespace-nowrap no-scrollbar">{{ username }}</h3>
 
                     <div class="flex flex-col w-full items-start">
                         <p class="text-white text-[12px] font-[var(--Regular)]">Level 12</p>
                         <!-- Progression Bar -->
                         <div class="relative w-full">
-                            <div class="h-[3px] rounded-md w-full bg-white opacity-50"></div>
-                            <div class="absolute top-0 left-0 h-[3px] rounded-md w-[60%] bg-white"></div>
+                            <div class="h-[4px] rounded-md w-full bg-white opacity-50"></div>
+                            <div class="absolute top-0 left-0 h-[4px] rounded-md w-[60%] bg-white"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </nav>
+
+        <!-- Main Test -->
+        <div class="flex flex-col gap-16 w-full max-h-screen p-8 overflow-y-auto bg-[var(--bg)]">
+            <!-- Username -->
+            <div>
+                <h1 class="text-3xl font-bold">Username:</h1>
+                {{ username }}
+            </div>
+
+            <!-- Stats -->
+            <div v-if="stats">
+                <h1 class="text-3xl font-bold">Stats:</h1>
+                <pre>{{ JSON.stringify(stats, null, 2) }}</pre>
+            </div>
+
+            <!-- Matches -->
+            <div>
+                <h1 class="text-3xl font-bold">Matches:</h1>
+                <pre v-for="match in matches" :key="match.id">{{ JSON.stringify(match, null, 2) }}</pre>
+            </div>
+
+            <!-- Legends -->
+            <div>
+                <h1 class="text-3xl font-bold">Legends:</h1>
+                <pre v-for="legend in legends" :key="legend.id">{{ JSON.stringify(legend, null, 2) }}</pre>
+            </div>
+
+            <!-- Error -->
+            <div v-if="error">
+                {{ error }}
+            </div>
+
+        </div>
+
 
     </main>
 </template>
