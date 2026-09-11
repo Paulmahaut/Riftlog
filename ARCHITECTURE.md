@@ -7,7 +7,12 @@ Request flow
   Controller → Service → Repository → Entity → Database.
   Each layer only talks to the one below it (e.g. Controllers never touch Repositories directly).
 
-Package layout (`com.riftlog`)
+Repo layout
+
+  backend/     the Maven project (pom.xml, mvnw, src/) — everything below is relative to here.
+  frontend/    reserved for the mobile web client (not started yet).
+
+Package layout (`com.riftlog`, under `backend/src/main/java`)
 
   entity/      JPA-mapped classes, one per table (Legend, Player, Deck, Match, MatchRound, Result).
 
