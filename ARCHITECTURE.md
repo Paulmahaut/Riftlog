@@ -45,6 +45,13 @@ Key rule
   A match is only valid once one side's score reaches 8 in its last round — enforced in
   MatchService, not in the database.
 
+Schema changes
+
+  Flyway owns the schema, not Hibernate: `backend/src/main/resources/db/migration/V1__init_schema.sql`
+  is the source of truth, and Hibernate only checks the DB matches the entities (ddl-auto=validate) —
+  it never modifies anything itself. Changing an entity means writing the matching SQL in a new
+  `V2__...sql`, `V3__...sql`, etc. Existing (already-applied) migration files are never edited.
+
 API surface
 
   POST /api/matches        log a full match + its rounds in one call (the README's "RPC" use case)
