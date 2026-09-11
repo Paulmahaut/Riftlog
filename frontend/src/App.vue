@@ -4,21 +4,32 @@ import { ref, onMounted } from 'vue'
 const stats = ref(null)
 const matches = ref([])
 const loading = ref(true)
+const legends = ref([])
 const error = ref(null)
 
 async function load() {
   try {
+    // STATS
     const statsResponse = await fetch('/api/stats')
     if (!statsResponse.ok) {
-      throw new Error('Erreur lors du chargement des stats')
+      throw new Error('Loading Stats failed')
     }
     stats.value = await statsResponse.json()
 
+    // MATCHES
     const matchesResponse = await fetch('/api/matches')
     if (!matchesResponse.ok) {
-      throw new Error('Erreur lors du chargement des matchs')
+      throw new Error('Loading Matches failed')
     }
     matches.value = await matchesResponse.json()
+
+    // LEGENDS
+    const legendsResponse = await fetch('/api/legends')
+    if (!legendsResponse.ok) {
+      throw new Error('Loading Legends failed')
+    }
+    legends.value = await legendsResponse.json()
+
   } catch (e) {
     error.value = e.message
   } finally {
@@ -37,11 +48,11 @@ onMounted(load)
       Minimal debug page: shows exactly what the API returns, nothing more.
     </p>
 
-    <h2>Stats</h2>
+    <h2>Legends</h2>
 
     <pre v-if="loading">loading...</pre>
     <pre v-else-if="error">{{ error }}</pre>
-    <pre v-else>{{ JSON.stringify(stats, null, 2) }}</pre>
+    <p v-else v-for="legend in legends" :key="legend.id">{{ legend.name }}</p>
 
     <h2>Matches</h2>
 
