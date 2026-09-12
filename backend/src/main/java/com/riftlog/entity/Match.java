@@ -30,6 +30,10 @@ public class Match {
     private LocalDateTime playedAt;
 
     @ManyToOne(optional = false)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
+
+    @ManyToOne(optional = false)
     @JoinColumn(name = "opponent_id", nullable = false)
     private Player opponent;
 
@@ -69,6 +73,14 @@ public class Match {
 
     public void setPlayedAt(LocalDateTime playedAt) {
         this.playedAt = playedAt;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     public Player getOpponent() {

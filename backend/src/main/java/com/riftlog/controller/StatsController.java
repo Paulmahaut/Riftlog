@@ -1,10 +1,12 @@
 package com.riftlog.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.riftlog.dto.StatsResponse;
+import com.riftlog.security.AuthenticatedUser;
 import com.riftlog.service.StatsService;
 
 @RestController
@@ -18,7 +20,7 @@ public class StatsController {
     }
 
     @GetMapping
-    public StatsResponse getStats() {
-        return statsService.computeStats();
+    public StatsResponse getStats(@AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return statsService.computeStats(currentUser.id());
     }
 }

@@ -26,9 +26,11 @@ import com.riftlog.entity.Legend;
 import com.riftlog.entity.Match;
 import com.riftlog.entity.Player;
 import com.riftlog.entity.Result;
+import com.riftlog.entity.User;
 import com.riftlog.exception.InvalidMatchException;
 import com.riftlog.exception.NotFoundException;
 import com.riftlog.repository.MatchRepository;
+import com.riftlog.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class MatchServiceTest {
@@ -41,10 +43,13 @@ class MatchServiceTest {
     private LegendService legendService;
     @Mock
     private DeckService deckService;
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private MatchService matchService;
 
+    private User owner;
     private Player opponent;
     private Legend myLegend;
     private Legend opponentLegend;
@@ -53,6 +58,11 @@ class MatchServiceTest {
 
     @BeforeEach
     void setUp() {
+        owner = new User();
+        owner.setId(1L);
+        owner.setEmail("paul@example.com");
+        owner.setDisplayName("Paul");
+
         opponent = new Player();
         opponent.setId(1L);
         opponent.setName("Julien");
@@ -81,11 +91,12 @@ class MatchServiceTest {
     }
 
     private void stubResolution() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
         when(playerService.findOrCreateByName("Julien")).thenReturn(opponent);
         when(legendService.findOrCreateByName("Ashe")).thenReturn(myLegend);
         when(legendService.findOrCreateByName("Viktor")).thenReturn(opponentLegend);
-        when(deckService.findOrCreate("Ashe Aggro", myLegend)).thenReturn(myDeck);
-        when(deckService.findOrCreate("Viktor Control", opponentLegend)).thenReturn(opponentDeck);
+        when(deckService.findOrCreate("Ashe Aggro", myLegend, owner)).thenReturn(myDeck);
+        when(deckService.findOrCreate("Viktor Control", opponentLegend, owner)).thenReturn(opponentDeck);
         when(matchRepository.save(any(Match.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
@@ -97,14 +108,14 @@ class MatchServiceTest {
                 new RoundRequest(2, 8, 4)
         );
 
-        MatchResponse response = matchService.logMatch(request);
+        MatchResponse response = matchService.logMatch(request, 1L);
 
         assertEquals("WIN", response.result());
         assertEquals(8, response.myFinalScore());
         assertEquals(4, response.opponentFinalScore());
         assertEquals(2, response.rounds().size());
         verify(playerService).findOrCreateByName("Julien");
-        verify(deckService).findOrCreate("Ashe Aggro", myLegend);
+        verify(deckService).findOrCreate("Ashe Aggro", myLegend, owner);
     }
 
     @Test
@@ -112,7 +123,7 @@ class MatchServiceTest {
         stubResolution();
         CreateMatchRequest request = requestWithRounds(new RoundRequest(1, 4, 8));
 
-        MatchResponse response = matchService.logMatch(request);
+        MatchResponse response = matchService.logMatch(request, 1L);
 
         assertEquals("LOSS", response.result());
     }
@@ -121,7 +132,7 @@ class MatchServiceTest {
     void logMatch_rejectsMatchWhereNeitherSideReaches8() {
         CreateMatchRequest request = requestWithRounds(new RoundRequest(1, 3, 2));
 
-        assertThrows(InvalidMatchException.class, () -> matchService.logMatch(request));
+        assertThrows(InvalidMatchException.class, () -> matchService.logMatch(request, 1L));
         verify(matchRepository, never()).save(any());
     }
 
@@ -130,15 +141,16 @@ class MatchServiceTest {
         Match match = new Match();
         match.setId(1L);
         match.setPlayedAt(LocalDateTime.now());
+        match.setOwner(owner);
         match.setOpponent(opponent);
         match.setMyDeck(myDeck);
         match.setOpponentDeck(opponentDeck);
         match.setResult(Result.WIN);
         match.setMyFinalScore(8);
         match.setOpponentFinalScore(4);
-        when(matchRepository.findById(1L)).thenReturn(Optional.of(match));
+        when(matchRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(match));
 
-        MatchResponse response = matchService.getMatch(1L);
+        MatchResponse response = matchService.getMatch(1L, 1L);
 
         assertEquals("Julien", response.opponentName());
         assertEquals("WIN", response.result());
@@ -146,36 +158,36 @@ class MatchServiceTest {
 
     @Test
     void getMatch_throwsWhenNotFound() {
-        when(matchRepository.findById(42L)).thenReturn(Optional.empty());
+        when(matchRepository.findByIdAndOwnerId(42L, 1L)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> matchService.getMatch(42L));
+        assertThrows(NotFoundException.class, () -> matchService.getMatch(42L, 1L));
     }
 
     @Test
     void listMatches_filtersByOpponentWhenGiven() {
-        when(matchRepository.findByOpponentId(1L)).thenReturn(List.of());
+        when(matchRepository.findByOwnerIdAndOpponentId(1L, 1L)).thenReturn(List.of());
 
-        matchService.listMatches(1L, null);
+        matchService.listMatches(1L, null, 1L);
 
-        verify(matchRepository).findByOpponentId(1L);
-        verify(matchRepository, never()).findAll();
+        verify(matchRepository).findByOwnerIdAndOpponentId(1L, 1L);
+        verify(matchRepository, never()).findByOwnerId(any());
     }
 
     @Test
     void listMatches_filtersByDeckWhenOnlyDeckGiven() {
-        when(matchRepository.findByMyDeckId(2L)).thenReturn(List.of());
+        when(matchRepository.findByOwnerIdAndMyDeckId(1L, 2L)).thenReturn(List.of());
 
-        matchService.listMatches(null, 2L);
+        matchService.listMatches(null, 2L, 1L);
 
-        verify(matchRepository).findByMyDeckId(2L);
+        verify(matchRepository).findByOwnerIdAndMyDeckId(1L, 2L);
     }
 
     @Test
-    void listMatches_returnsAllWhenNoFilterGiven() {
-        when(matchRepository.findAll()).thenReturn(List.of());
+    void listMatches_returnsAllForOwnerWhenNoFilterGiven() {
+        when(matchRepository.findByOwnerId(1L)).thenReturn(List.of());
 
-        matchService.listMatches(null, null);
+        matchService.listMatches(null, null, 1L);
 
-        verify(matchRepository).findAll();
+        verify(matchRepository).findByOwnerId(1L);
     }
 }

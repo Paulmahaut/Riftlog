@@ -47,9 +47,9 @@ class StatsServiceTest {
 
     @Test
     void computeStats_returnsZeroesWhenNoMatches() {
-        when(matchRepository.findAll()).thenReturn(List.of());
+        when(matchRepository.findByOwnerId(1L)).thenReturn(List.of());
 
-        StatsResponse stats = statsService.computeStats();
+        StatsResponse stats = statsService.computeStats(1L);
 
         assertEquals(0, stats.totalMatches());
         assertEquals(0.0, stats.overallWinRate());
@@ -63,12 +63,12 @@ class StatsServiceTest {
         Deck viktorControl = deck("Viktor Control", "Viktor");
         Deck zoeTempo = deck("Zoe Tempo", "Zoe");
 
-        when(matchRepository.findAll()).thenReturn(List.of(
+        when(matchRepository.findByOwnerId(1L)).thenReturn(List.of(
                 match(asheAggro, viktorControl, Result.WIN),
                 match(asheAggro, zoeTempo, Result.LOSS)
         ));
 
-        StatsResponse stats = statsService.computeStats();
+        StatsResponse stats = statsService.computeStats(1L);
 
         assertEquals(2, stats.totalMatches());
         assertEquals(0.5, stats.overallWinRate());

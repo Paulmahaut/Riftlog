@@ -24,6 +24,10 @@ public class Deck {
     @JoinColumn(name = "legend_id", nullable = false)
     private Legend legend;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
+
     public Long getId() {
         return id;
     }
@@ -46,5 +50,13 @@ public class Deck {
 
     public void setLegend(Legend legend) {
         this.legend = legend;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 }

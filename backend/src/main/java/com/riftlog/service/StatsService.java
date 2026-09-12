@@ -20,8 +20,8 @@ public class StatsService {
         this.matchRepository = matchRepository;
     }
 
-    public StatsResponse computeStats() {
-        List<Match> matches = matchRepository.findAll();
+    public StatsResponse computeStats(Long ownerId) {
+        List<Match> matches = matchRepository.findByOwnerId(ownerId);
 
         Map<String, Double> winRateByDeck = matches.stream()
                 .collect(Collectors.groupingBy(match -> match.getMyDeck().getName()))
