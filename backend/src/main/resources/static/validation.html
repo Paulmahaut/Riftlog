@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Riftlog — Validation API</title>
+<style>
+    :root {
+        --bg: #16171d;
+        --panel: #1f2028;
+        --border: #2e303a;
+        --text: #d1d3d8;
+        --text-dim: #8b8d96;
+        --accent: #c084fc;
+        --ok: #4ade80;
+        --err: #f87171;
+        --mono: ui-monospace, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
+        padding: 24px;
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .subtitle { color: var(--text-dim); margin: 0 0 24px; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1200px; }
+    .grid.full { grid-template-columns: 1fr; }
+    .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+    }
+    .panel h2 { font-size: 14px; margin: 0 0 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+    label { display: block; font-size: 12px; color: var(--text-dim); margin: 8px 0 4px; }
+    input, textarea {
+        width: 100%;
+        background: #0f1015;
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 4px;
+        padding: 7px 9px;
+        font: 13px var(--mono);
+    }
+    button {
+        cursor: pointer;
+        background: var(--accent);
+        color: #16171d;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 14px;
+        font-weight: 600;
+        font-size: 13px;
+        margin-top: 10px;
+        margin-right: 6px;
+    }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .row { display: flex; gap: 8px; }
+    .row > div { flex: 1; }
+    .status-bar {
+        display: flex; align-items: center; gap: 10px;
+        background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+        padding: 12px 16px; margin-bottom: 16px; max-width: 1200px;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+    .dot.ok { background: var(--ok); }
+    .dot.err { background: var(--err); }
+    .session-line { display: flex; justify-content: space-between; align-items: center; }
+    pre {
+        background: #0f1015; border: 1px solid var(--border); border-radius: 4px;
+        padding: 10px; overflow: auto; max-height: 280px; font-size: 12px; margin: 8px 0 0;
+    }
+    .rounds-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .rounds-table th, .rounds-table td { padding: 4px; font-size: 12px; }
+    .rounds-table th { color: var(--text-dim); text-align: left; font-weight: 400; }
+    .log { max-width: 1200px; margin-top: 16px; }
+    .log-entry {
+        display: grid; grid-template-columns: 70px 50px 1fr 60px; gap: 8px; align-items: center;
+        padding: 6px 10px; border-bottom: 1px solid var(--border); font: 12px var(--mono);
+    }
+    .log-entry:first-child { border-top: 1px solid var(--border); }
+    .badge { padding: 2px 6px; border-radius: 3px; font-weight: 600; text-align: center; }
+    .badge.ok { background: rgba(74, 222, 128, 0.15); color: var(--ok); }
+    .badge.err { background: rgba(248, 113, 113, 0.15); color: var(--err); }
+    .muted { color: var(--text-dim); }
+    .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<h1>Riftlog — Validation API</h1>
+<p class="subtitle">Outil interne : parle directement à cette API (même origine, pas de CORS). Ne fait pas partie du frontend produit.</p>
+
+<div class="status-bar">
+    <div class="dot" id="connDot"></div>
+    <span id="connText">Vérification de la connexion au backend…</span>
+</div>
+
+<div class="grid">
+    <div class="panel" id="authPanel">
+        <h2>Session</h2>
+
+        <div id="loggedOutView">
+            <div class="row">
+                <div>
+                    <label>Créer un compte</label>
+                    <input id="regEmail" placeholder="email" value="test@example.com" />
+                    <input id="regPassword" placeholder="mot de passe (8+ car.)" type="password" value="password123" />
+                    <input id="regDisplayName" placeholder="nom affiché" value="Testeur" />
+                    <button onclick="register()">Créer le compte</button>
+                </div>
+                <div>
+                    <label>Se connecter</label>
+                    <input id="loginEmail" placeholder="email" value="test@example.com" />
+                    <input id="loginPassword" placeholder="mot de passe" type="password" value="password123" />
+                    <button onclick="login()">Se connecter</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loggedInView" class="hidden">
+            <div class="session-line">
+                <span>Connecté en tant que <strong id="sessionName"></strong> (<span id="sessionEmail" class="muted"></span>)</span>
+                <button class="secondary" onclick="logout()">Se déconnecter</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Logger un match</h2>
+        <div class="row">
+            <div>
+                <label>Adversaire</label>
+                <input id="opponentName" value="Test Opponent" />
+                <label>Ma légende</label>
+                <input id="myLegendName" value="Jiro" />
+                <label>Mon deck</label>
+                <input id="myDeckName" value="Jiro Aggro" />
+            </div>
+            <div>
+                <label>&nbsp;</label>
+                <div style="height:29px"></div>
+                <label>Légende adverse</label>
+                <input id="opponentLegendName" value="Ada" />
+                <label>Deck adverse</label>
+                <input id="opponentDeckName" value="Ada Control" />
+            </div>
+        </div>
+        <table class="rounds-table" id="roundsTable">
+            <thead><tr><th>Manche</th><th>Mon score</th><th>Score adverse</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button class="secondary" onclick="addRound()">+ Manche</button>
+        <button onclick="logMatch()">Envoyer le match</button>
+        <p class="muted" style="font-size:12px;margin-top:6px">La dernière manche doit atteindre 8 d'un côté pour être valide.</p>
+    </div>
+</div>
+
+<div class="grid" style="margin-top:16px">
+    <div class="panel">
+        <h2>Matches <button class="secondary" style="margin:0" onclick="refreshMatches()">Rafraîchir</button></h2>
+        <pre id="matchesOut">—</pre>
+    </div>
+    <div class="panel">
+        <h2>Decks <button class="secondary" style="margin:0" onclick="refreshDecks()">Rafraîchir</button></h2>
+        <pre id="decksOut">—</pre>
+    </div>
+    <div class="panel">
+        <h2>Stats <button class="secondary" style="margin:0" onclick="refreshStats()">Rafraîchir</button></h2>
+        <pre id="statsOut">—</pre>
+    </div>
+    <div class="panel">
+        <h2>Légendes <button class="secondary" style="margin:0" onclick="refreshLegends()">Rafraîchir</button></h2>
+        <pre id="legendsOut">—</pre>
+    </div>
+</div>
+
+<div class="panel log">
+    <h2>Journal des requêtes <button class="secondary" style="margin:0" onclick="clearLog()">Vider</button></h2>
+    <div id="logEntries"></div>
+</div>
+
+<script>
+    const TOKEN_KEY = 'riftlog_validation_token';
+    let token = localStorage.getItem(TOKEN_KEY);
+    let currentUser = null;
+
+    function logEntry(method, path, status, ok) {
+        const container = document.getElementById('logEntries');
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        const time = new Date().toLocaleTimeString();
+        div.innerHTML = `<span class="muted">${time}</span><span>${method}</span><span>${path}</span><span class="badge ${ok ? 'ok' : 'err'}">${status}</span>`;
+        container.prepend(div);
+    }
+
+    function clearLog() {
+        document.getElementById('logEntries').innerHTML = '';
+    }
+
+    async function callApi(method, path, body, auth = true) {
+        const headers = {};
+        if (body !== undefined) headers['Content-Type'] = 'application/json';
+        if (auth && token) headers['Authorization'] = 'Bearer ' + token;
+
+        let response, data;
+        try {
+            response = await fetch(path, {
+                method,
+                headers,
+                body: body !== undefined ? JSON.stringify(body) : undefined,
+            });
+        } catch (e) {
+            logEntry(method, path, 'ERR', false);
+            setConnStatus(false);
+            throw e;
+        }
+        setConnStatus(true);
+        try {
+            data = await response.json();
+        } catch {
+            data = null;
+        }
+        logEntry(method, path, response.status, response.ok);
+        return { ok: response.ok, status: response.status, data };
+    }
+
+    function setConnStatus(reachable) {
+        const dot = document.getElementById('connDot');
+        const text = document.getElementById('connText');
+        dot.className = 'dot ' + (reachable ? 'ok' : 'err');
+        text.textContent = reachable ? 'Backend joignable' : 'Backend injoignable (vérifie que le serveur tourne sur ce port)';
+    }
+
+    function persistSession(auth) {
+        token = auth.token;
+        currentUser = { id: auth.userId, email: auth.email, displayName: auth.displayName };
+        localStorage.setItem(TOKEN_KEY, token);
+        renderSession();
+    }
+
+    function renderSession() {
+        const loggedOut = document.getElementById('loggedOutView');
+        const loggedIn = document.getElementById('loggedInView');
+        if (token && currentUser) {
+            loggedOut.classList.add('hidden');
+            loggedIn.classList.remove('hidden');
+            document.getElementById('sessionName').textContent = currentUser.displayName;
+            document.getElementById('sessionEmail').textContent = currentUser.email;
+        } else {
+            loggedOut.classList.remove('hidden');
+            loggedIn.classList.add('hidden');
+        }
+    }
+
+    async function register() {
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const displayName = document.getElementById('regDisplayName').value;
+        const res = await callApi('POST', '/api/auth/register', { email, password, displayName }, false);
+        if (res.ok) {
+            persistSession(res.data);
+            refreshAll();
+        } else {
+            alert('Échec inscription: ' + (res.data?.message || res.status));
+        }
+    }
+
+    async function login() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const res = await callApi('POST', '/api/auth/login', { email, password }, false);
+        if (res.ok) {
+            persistSession(res.data);
+            refreshAll();
+        } else {
+            alert('Échec connexion: ' + (res.data?.message || res.status));
+        }
+    }
+
+    function logout() {
+        token = null;
+        currentUser = null;
+        localStorage.removeItem(TOKEN_KEY);
+        renderSession();
+    }
+
+    async function checkConnection() {
+        try {
+            await callApi('GET', '/api/legends', undefined, false);
+        } catch {
+            // setConnStatus(false) already handled inside callApi
+        }
+    }
+
+    async function restoreSession() {
+        if (!token) return;
+        const res = await callApi('GET', '/api/auth/me', undefined, true);
+        if (res.ok) {
+            currentUser = res.data;
+            renderSession();
+            refreshAll();
+        } else {
+            logout();
+        }
+    }
+
+    let roundCount = 0;
+    function addRound(myScore = '', opponentScore = '') {
+        roundCount++;
+        const tbody = document.querySelector('#roundsTable tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${roundCount}</td>
+            <td><input type="number" min="0" class="my-score" value="${myScore}" /></td>
+            <td><input type="number" min="0" class="opp-score" value="${opponentScore}" /></td>`;
+        tbody.appendChild(tr);
+    }
+
+    async function logMatch() {
+        const rows = document.querySelectorAll('#roundsTable tbody tr');
+        const rounds = Array.from(rows).map((row, i) => ({
+            roundNumber: i + 1,
+            myScore: Number(row.querySelector('.my-score').value || 0),
+            opponentScore: Number(row.querySelector('.opp-score').value || 0),
+        }));
+        const body = {
+            opponentName: document.getElementById('opponentName').value,
+            myLegendName: document.getElementById('myLegendName').value,
+            myDeckName: document.getElementById('myDeckName').value,
+            opponentLegendName: document.getElementById('opponentLegendName').value,
+            opponentDeckName: document.getElementById('opponentDeckName').value,
+            rounds,
+        };
+        const res = await callApi('POST', '/api/matches', body, true);
+        if (res.ok) {
+            refreshAll();
+        } else {
+            alert('Échec: ' + (res.data?.message || res.status));
+        }
+    }
+
+    async function refreshMatches() {
+        const res = await callApi('GET', '/api/matches', undefined, true);
+        document.getElementById('matchesOut').textContent = JSON.stringify(res.data, null, 2);
+    }
+    async function refreshDecks() {
+        const res = await callApi('GET', '/api/decks', undefined, true);
+        document.getElementById('decksOut').textContent = JSON.stringify(res.data, null, 2);
+    }
+    async function refreshStats() {
+        const res = await callApi('GET', '/api/stats', undefined, true);
+        document.getElementById('statsOut').textContent = JSON.stringify(res.data, null, 2);
+    }
+    async function refreshLegends() {
+        const res = await callApi('GET', '/api/legends', undefined, true);
+        document.getElementById('legendsOut').textContent = JSON.stringify(res.data, null, 2);
+    }
+    function refreshAll() {
+        refreshMatches();
+        refreshDecks();
+        refreshStats();
+        refreshLegends();
+    }
+
+    addRound(8, 4);
+    renderSession();
+    checkConnection();
+    restoreSession();
+</script>
+</body>
+</html>
