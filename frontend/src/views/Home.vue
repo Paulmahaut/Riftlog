@@ -10,6 +10,7 @@ import ProfileIcon from '../assets/ProfileIcon.svg?component'
 import tempIcon from '../assets/vue.svg?component'
 
 import NavbarButton from '../components/NavbarButton.vue'
+import { apiFetch } from '../api.js'
 
 const stats = ref(null)
 const matches = ref([])
@@ -22,21 +23,21 @@ const username = ref('Ready Player One')
 async function load() {
     try {
         // STATS
-        const statsResponse = await fetch('/api/stats')
+        const statsResponse = await apiFetch('/api/stats')
         if (!statsResponse.ok) {
             throw new Error('Loading Stats failed')
         }
         stats.value = await statsResponse.json()
 
         // MATCHES
-        const matchesResponse = await fetch('/api/matches')
+        const matchesResponse = await apiFetch('/api/matches')
         if (!matchesResponse.ok) {
             throw new Error('Loading Matches failed')
         }
         matches.value = await matchesResponse.json()
 
         // LEGENDS
-        const legendsResponse = await fetch('/api/legends')
+        const legendsResponse = await apiFetch('/api/legends')
         if (!legendsResponse.ok) {
             throw new Error('Loading Legends failed')
         }
