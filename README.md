@@ -156,3 +156,40 @@ Scope: coursework prototype vs. the long-term plan
   match, history, stats) instead of account management. Adding real per-user login later is a
   frontend-only change — a login screen plus tracking which user is active — the backend needs
   nothing new.
+
+Pour Eugène — lancer le projet sur Linux (copier-coller, dans l'ordre)
+
+  Installation (une seule fois) :
+  ```
+  sudo apt update && sudo apt install -y git openjdk-21-jdk ca-certificates curl
+  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
+  sudo install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  sudo usermod -aG docker $USER
+  ```
+  Déconnecte-toi/reconnecte-toi (ou redémarre) une fois, pour que `docker` marche sans `sudo`.
+
+  Cloner + lancer (`git clone <url-du-repo> && cd Riftlog`, puis) :
+  ```
+  docker compose up -d
+  ```
+  Dans un 1er terminal, depuis `backend/` :
+  ```
+  ./mvnw spring-boot:run
+  ```
+  Attends la ligne `Started RiftlogApplication` (~10-20s la 1ère fois), puis dans un 2e terminal :
+  ```
+  curl -X POST http://localhost:8080/api/auth/register \
+    -H "Content-Type: application/json" \
+    -d '{"email":"demo@riftlog.local","password":"riftlog-demo-2026","displayName":"Demo"}'
+  ```
+  (une seule fois — si ça répond `EmailAlreadyUsedException`, c'est déjà fait, tant mieux.)
+
+  Puis, toujours dans ce 2e terminal, depuis `frontend/` :
+  ```
+  npm install
+  npm run dev
+  ```
+  → ouvre `http://localhost:5173`. C'est tout.
