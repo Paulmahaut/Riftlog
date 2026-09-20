@@ -107,36 +107,23 @@ Running it locally
 
 Roadmap
 
-  Done
-    Backend MVP (entities, services, REST/RPC endpoints, exception handling) — see ARCHITECTURE.md.
-    Unit test coverage for the service layer.
-    Flyway migrations (schema is versioned, no more auto-guessed DDL).
-    Multi-user auth (JWT) — matches/decks are now private per registered user.
-    PostgreSQL everywhere (Docker locally, Neon in prod) — no more H2.
-    Frontend brief handed off (FRONTEND.md) and a real Vue frontend started (frontend/).
-    Deployment path documented and working (DEPLOY.md — Render + Neon, both free tier).
+  Done: backend MVP (entities, services, REST/RPC, exception handling — see ARCHITECTURE.md),
+  service-layer unit tests, Flyway migrations, JWT multi-user auth, Postgres everywhere (Docker
+  locally, Neon in prod), a real deploy path (DEPLOY.md), and a Vue frontend started (frontend/).
 
-  Next
-    Finish the frontend screens (log match, history, stats) per FRONTEND.md, using the shared
-    demo account (frontend/src/api.js) — no login UI needed for the prototype, see Scope below.
-    Try a real end-to-end duel: log a match, check stats, from the actual UI.
+  Next: finish the remaining frontend screens (Play, Decks, Stats — see FRONTEND.md) and run one
+  real match through the actual UI end to end.
 
-  Later
-    A real login/register screen and per-user accounts in the UI (the backend already supports
-    this — see Scope below).
-    Richer stats (going-first split, per-round analysis, deck versioning) — see RiftLite for inspiration.
-    Android app (native or wrapped web client) consuming this API.
+  Later: a real login/register screen (the backend already supports it, see Scope below), richer
+  stats (going-first split, per-round analysis, deck versioning), an Android client.
 
 Scope: coursework prototype vs. the long-term plan
 
-  This started as a school project but is meant to keep going afterwards as a real personal app
-  (see the original goal in earlier design notes: usable by others, eventually via an Android app).
-  That's why the backend already has full multi-user auth (JWT, each account's data private) even
-  though it's more than the coursework prototype strictly needs.
+  Started as a school project, meant to keep going afterwards as a real personal app — that's why
+  the backend already has full multi-user auth even though the prototype doesn't strictly need it.
 
-  For the version being handed in, the frontend deliberately skips building a login/register UI:
-  it logs in automatically as one single shared demo account (frontend/src/api.js) and every screen
-  just uses that. This keeps the UI scope to the actual gameplay features (log a match, history,
-  stats) instead of account management, without throwing away the auth work — turning it into real
-  multi-account usage later is a frontend-only change (a login screen + storing which user is
-  active), the backend needs nothing new.
+  The frontend deliberately has no login/register screen yet: every screen logs in automatically
+  as one shared demo account (`frontend/src/api.js`), keeping the UI scope to gameplay (log a
+  match, history, stats) instead of account management. Adding real per-user login later is a
+  frontend-only change — a login screen plus tracking which user is active — the backend needs
+  nothing new.
