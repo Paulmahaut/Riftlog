@@ -19,38 +19,91 @@ Stack & Architecture
 
 Running it locally
 
-  1. Prerequisites: Java + Maven (or just the `mvnw` wrapper, no separate install needed), Node/npm,
-     Docker + Docker Compose.
+  Prerequisites — install once per machine, skip anything already present. Needed either way:
+  JDK 21, Node.js `^20.19.0` or `>=22.12.0` (Vite 8's requirement), Docker + Docker Compose.
+  Maven itself isn't needed — `mvnw`/`mvnw.cmd` (checked into `backend/`) downloads it on first run.
 
-  2. Start Postgres (from the repo root):
+  Windows (PowerShell; `winget` ships with Windows 10/11):
+     ```
+     winget install --id Git.Git -e
+     winget install --id EclipseAdoptium.Temurin.21.JDK -e
+     winget install --id OpenJS.NodeJS.LTS -e
+     winget install --id Docker.DockerDesktop -e
+     ```
+     Docker Desktop needs WSL2 (`wsl --install` if it asks) and, after install, must be **launched
+     once** (the app, not just installed) before `docker compose` works.
+
+  macOS ([Homebrew](https://brew.sh)):
+     ```
+     brew install git openjdk@21 node
+     brew install --cask docker
+     sudo ln -sfn "$(brew --prefix openjdk@21)/libexec/openjdk.jdk" /Library/Java/JavaVirtualMachines/openjdk-21.jdk
+     ```
+     Then launch the Docker Desktop app once before `docker compose` works.
+
+  Linux (Ubuntu/Debian; other distros — same idea via your package manager):
+     ```
+     sudo apt update && sudo apt install -y git openjdk-21-jdk ca-certificates curl
+     curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
+
+     # Docker Engine + Compose plugin, from Docker's own repo (Ubuntu's own packages vary by version)
+     sudo install -m 0755 -d /etc/apt/keyrings
+     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+     sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+     sudo usermod -aG docker $USER
+     ```
+     Log out/in once for the `docker` group membership to take effect.
+
+  Verify any OS: `git --version && java -version && node -v && docker compose version`
+
+  1. Start Postgres (from the repo root, any OS):
      ```
      docker compose up -d
      ```
      Starts Postgres on `localhost:5432` (db/user/password: `riftlog`, see `docker-compose.yml`).
+     Docker Desktop must actually be running first (not just installed).
 
-  3. Launch the backend (from `backend/`):
+  2. Launch the backend (from `backend/`):
      ```
-     ./mvnw spring-boot:run
+     ./mvnw spring-boot:run          # macOS / Linux / Git Bash
+     mvnw.cmd spring-boot:run        # Windows (cmd or PowerShell)
      ```
      Opens the API on `http://localhost:8080`. Flyway creates the schema automatically on startup,
-     but there is no seeded account: you must register a real user before the API will do anything
-     else, since every match/deck is owned by whoever is authenticated. Either through the
-     frontend's register screen once it exists, or directly:
+     but there is no seeded account — you must register one before the API does anything else,
+     since every match/deck is owned by whoever is authenticated.
+
+  3. **One-time per database**: create the shared demo account the frontend logs in as
+     automatically (`frontend/src/api.js` — no login UI in this prototype, see Scope below).
+     Skip this only if you're pointing at a database where it already exists:
      ```
      curl -X POST http://localhost:8080/api/auth/register \
        -H "Content-Type: application/json" \
-       -d "{\"email\":\"you@example.com\",\"password\":\"changeme123\",\"displayName\":\"You\"}"
+       -d "{\"email\":\"demo@riftlog.local\",\"password\":\"riftlog-demo-2026\",\"displayName\":\"Demo\"}"
      ```
-     This returns a JWT `token` — send it as `Authorization: Bearer <token>` on every other
-     `/api/**` call (everything except `/api/auth/register` and `/api/auth/login` requires it; the
-     API is stateless, there is no server-side session/cookie).
+     PowerShell equivalent:
+     ```
+     Invoke-RestMethod -Uri http://localhost:8080/api/auth/register -Method Post `
+       -ContentType "application/json" `
+       -Body '{"email":"demo@riftlog.local","password":"riftlog-demo-2026","displayName":"Demo"}'
+     ```
+     A `400`/`EmailAlreadyUsedException` response just means it's already registered — fine,
+     move on. Without this step the frontend's login call 401s forever (it retries the same
+     hardcoded credentials on every request, there's no error message pointing back here).
 
-  4. Launch the frontend (from `frontend/`):
+  4. Launch the frontend (from `frontend/`, in a second terminal — same commands on every OS):
      ```
      npm install
      npm run dev
      ```
-     Opens the app on `http://localhost:5173`.
+     Opens the app on `http://localhost:5173`, already wired to the backend through Vite's dev
+     proxy (`/api/**` → `http://localhost:8080`, see `vite.config.js`) — no extra config needed.
+
+  To register a different, real (non-demo) account instead — e.g. to test the multi-user auth
+  path directly — reuse the same `curl`/`Invoke-RestMethod` call above with your own email/password.
+  Either way this returns a JWT `token` — send it as `Authorization: Bearer <token>` on every other
+  `/api/**` call (everything except `/api/auth/register` and `/api/auth/login` requires it; the
+  API is stateless, there is no server-side session/cookie).
 
 Roadmap
 
