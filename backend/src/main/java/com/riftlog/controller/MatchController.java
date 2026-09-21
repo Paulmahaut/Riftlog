@@ -32,14 +32,14 @@ public class MatchController {
 
     @PostMapping
     public ResponseEntity<MatchResponse> logMatch(@Valid @RequestBody CreateMatchRequest request,
-                                                   @AuthenticationPrincipal AuthenticatedUser currentUser) {
+            @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return ResponseEntity.status(HttpStatus.CREATED).body(matchService.logMatch(request, currentUser.id()));
     }
 
     @GetMapping
     public List<MatchResponse> listMatches(@RequestParam(required = false) Long opponentId,
-                                            @RequestParam(required = false) Long deckId,
-                                            @AuthenticationPrincipal AuthenticatedUser currentUser) {
+            @RequestParam(required = false) Long deckId,
+            @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return matchService.listMatches(opponentId, deckId, currentUser.id());
     }
 

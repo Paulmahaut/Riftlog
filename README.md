@@ -1,193 +1,389 @@
 # Riftlog
 
-RiftIRL — Spring Boot backend service and mobile-first web client for tracking tabletop match history (TCG/Riftbound).
+**CardQuest** — Mobile-first web application for tracking **Riftbound TCG** match history.
 
-Stack & Architecture
+Riftlog lets players record their matches, decks, rounds, and results, then review their match history and statistics.
 
-  Backend: Java / Spring Boot, layered architecture (Controller, Service, Entity).
+---
 
-  Persistence: Spring Data JPA / PostgreSQL (Flyway-managed schema, run locally via `docker-compose.yml`).
+## Stack
 
-  Auth: JWT, stateless (no server-side session) — each registered user's matches and decks are private to them.
+### Backend
 
-  API: REST (stats, match history, match-up filters) and RPC (fast end-of-game logging).
+- Java 21
+- Spring Boot
+- Spring Data JPA
+- PostgreSQL
+- Flyway
+- JWT Authentication
+- REST API
+- SLF4J
 
-  Core: Dependency Injection (@Autowired), global HTTP exception handling (@ControllerAdvice), application logging (SLF4J).
+### Frontend
 
-  See `ARCHITECTURE.md` for how requests flow through the code, `FRONTEND.md` for the frontend brief,
-  and `DEPLOY.md` for deploying a shared instance.
+- Vue 3
+- Vite
+- Tailwind CSS
 
-Running it locally
+### Database
 
-  Prerequisites — install once per machine, skip anything already present. Needed either way:
-  JDK 21, Node.js `^20.19.0` or `>=22.12.0` (Vite 8's requirement), Docker + Docker Compose.
-  Maven itself isn't needed — `mvnw`/`mvnw.cmd` (checked into `backend/`) downloads it on first run.
+- PostgreSQL
+- [Neon](https://neon.tech/) for shared development and production
+- Docker PostgreSQL available for isolated local development
 
-  <details>
-  <summary>Install on Windows (winget, ships with Windows 10/11)</summary>
+---
 
-  ```
-  winget install --id Git.Git -e
-  winget install --id EclipseAdoptium.Temurin.21.JDK -e
-  winget install --id OpenJS.NodeJS.LTS -e
-  winget install --id Docker.DockerDesktop -e
-  ```
-  Needs WSL2 (`wsl --install` if it asks). Docker Desktop must be **launched once** (the app, not
-  just installed) before `docker compose` works.
-  </details>
+## Architecture
 
-  <details>
-  <summary>Install on macOS (Homebrew)</summary>
+```text
+┌─────────────────────┐
+│     Vue Frontend    │
+│    localhost:5173   │
+└──────────┬──────────┘
+           │
+           │ /api/*
+           ▼
+┌─────────────────────┐
+│    Spring Boot      │
+│    localhost:8080   │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│    PostgreSQL       │
+│        Neon         │
+└─────────────────────┘
+```
 
-  ```
-  brew install git openjdk@21 node
-  brew install --cask docker
-  sudo ln -sfn "$(brew --prefix openjdk@21)/libexec/openjdk.jdk" /Library/Java/JavaVirtualMachines/openjdk-21.jdk
-  ```
-  Launch the Docker Desktop app once before `docker compose` works.
-  </details>
+The backend follows a layered architecture:
 
-  <details>
-  <summary>Install on Linux (Ubuntu/Debian; other distros — same idea, own package manager)</summary>
+```text
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+PostgreSQL
+```
 
-  ```
-  sudo apt update && sudo apt install -y git openjdk-21-jdk ca-certificates curl
-  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
+See also:
 
-  # Docker Engine + Compose plugin from Docker's own repo (Ubuntu's own packages vary by version)
-  sudo install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-  sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-  sudo usermod -aG docker $USER   # log out/in after, for the group to take effect
-  ```
-  </details>
+- `ARCHITECTURE.md` — backend architecture and request flow
+- `FRONTEND.md` — frontend structure and requirements
+- `DEPLOY.md` — deployment instructions
 
-  Verify any OS: `git --version && java -version && node -v && docker compose version`
+---
 
-  1. Database — pick one:
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
-     **Local Postgres (default, isolated per machine):**
-     ```
-     docker compose up -d
-     ```
-     `localhost:5432`, db/user/password `riftlog` (see `docker-compose.yml`). Docker Desktop must
-     actually be running first, not just installed.
+# Installation
 
-     <details><summary>Or: the shared Neon branch instead (same data for both devs, no local Docker)</summary>
+## Prerequisites
 
-     ```
-     npm i -g neon
-     neon login
-     neon link --project-id wispy-star-87521131 --branch production   # once per machine
-     neon checkout dev                                                  # creates/switches to a shared "dev" branch
-     ```
-     `neon checkout` writes `.env.local` with a `DATABASE_URL` — split it into three env vars
-     (same values, just re-shaped) before step 2 below:
-     ```
-     DB_URL=jdbc:postgresql://<host>/<database>?channel_binding=require&sslmode=require
-     DB_USERNAME=<user>
-     DB_PASSWORD=<password>
-     ```
-     Use a `dev` branch, not `production` — that one is what Render actually serves. Full Neon
-     setup (incl. a security note on `neon mcp`) is in DEPLOY.md.
-     </details>
+Install the following once per machine:
 
-  2. Launch the backend (from `backend/`):
-     ```
-     ./mvnw spring-boot:run          # macOS / Linux / Git Bash
-     mvnw.cmd spring-boot:run        # Windows (cmd or PowerShell)
-     ```
-     Opens the API on `http://localhost:8080`. Flyway creates the schema automatically on startup,
-     but there is no seeded account: you must register a real user before the API will do anything
-     else, since every match/deck is owned by whoever is authenticated. Either through the
-     frontend's register screen once it exists, or directly:
+- JDK 21
+- Node.js `^20.19.0` or `>=22.12.0`
+- Git
+- Docker + Docker Compose only if you want to use a local PostgreSQL database (whch is an old fall back - or used just to dev in local)
 
-    **use precisely this command**
-     ```
-     curl -X POST http://localhost:8080/api/auth/register -H "Content-Type: application/json" -d '{"email":"you@example.com","password":"changeme123","displayName":"Ready Player One"}'
+Maven itself is not required. The project includes `mvnw` / `mvnw.cmd`.
 
-     ```
-     PowerShell equivalent:
-     ```
-     Invoke-RestMethod -Uri http://localhost:8080/api/auth/register -Method Post `
-       -ContentType "application/json" `
-       -Body '{"email":"demo@riftlog.local","password":"riftlog-demo-2026","displayName":"Demo"}'
-     ```
-     A `400`/`EmailAlreadyUsedException` response just means it's already registered — fine,
-     move on. Without this step the frontend's login call 401s forever (it retries the same
-     hardcoded credentials on every request, there's no error message pointing back here).
+### Verify your installation
 
-  4. Launch the frontend (from `frontend/`, in a second terminal — same commands on every OS):
-     ```
-     npm install
-     npm run dev
-     ```
-     Opens the app on `http://localhost:5173`, already wired to the backend through Vite's dev
-     proxy (`/api/**` → `http://localhost:8080`, see `vite.config.js`) — no extra config needed.
+```bash
+git --version
+java -version
+node -v
+docker compose version
+```
 
-  To register a different, real (non-demo) account instead — e.g. to test the multi-user auth
-  path directly — reuse the same `curl`/`Invoke-RestMethod` call above with your own email/password.
-  Either way this returns a JWT `token` — send it as `Authorization: Bearer <token>` on every other
-  `/api/**` call (everything except `/api/auth/register` and `/api/auth/login` requires it; the
-  API is stateless, there is no server-side session/cookie).
+---
 
-Roadmap
+# Database
 
-  Done: backend MVP (entities, services, REST/RPC, exception handling — see ARCHITECTURE.md),
-  service-layer unit tests, Flyway migrations, JWT multi-user auth, Postgres everywhere (Docker
-  locally, Neon in prod), a real deploy path (DEPLOY.md), and a Vue frontend started (frontend/).
+_Note that the `Docker volume` is only used as a fallback system to keep the project alive._
 
-  Next: finish the remaining frontend screens (Play, Decks, Stats — see FRONTEND.md) and run one
-  real match through the actual UI end to end.
+## Neon (the final one - the one being used)
 
-  Later: a real login/register screen (the backend already supports it, see Scope below), richer
-  stats (going-first split, per-round analysis, deck versioning), an Android client.
+This is the recommended configuration for shared development and production.
 
-Scope: coursework prototype vs. the long-term plan
+The backend uses the following environment variables:
 
-  Started as a school project, meant to keep going afterwards as a real personal app — that's why
-  the backend already has full multi-user auth even though the prototype doesn't strictly need it.
+```env
+DB_URL=jdbc:postgresql://<host>/<database>?sslmode=require&channel_binding=require
+DB_USERNAME=<username>
+DB_PASSWORD=<password>
+```
 
-  The frontend deliberately has no login/register screen yet: every screen logs in automatically
-  as one shared demo account (`frontend/src/api.js`), keeping the UI scope to gameplay (log a
-  match, history, stats) instead of account management. Adding real per-user login later is a
-  frontend-only change — a login screen plus tracking which user is active — the backend needs
-  nothing new.
+Example:
 
-Pour Eugène — lancer le projet sur Linux (copier-coller, dans l'ordre)
+```env
+DB_URL=jdbc:postgresql://ep-example.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DB_USERNAME=neondb_owner
+DB_PASSWORD=your-password
+```
 
-  Installation (une seule fois) :
-  ```
-  sudo apt update && sudo apt install -y git openjdk-21-jdk ca-certificates curl
-  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
-  sudo install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-  sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-  sudo usermod -aG docker $USER
-  ```
-  Déconnecte-toi/reconnecte-toi (ou redémarre) une fois, pour que `docker` marche sans `sudo`.
+Flyway automatically creates and updates the database schema when the backend starts.
 
-  Cloner + lancer (`git clone <url-du-repo> && cd Riftlog`, puis) :
-  ```
-  docker compose up -d
-  ```
-  Dans un 1er terminal, depuis `backend/` :
-  ```
-  ./mvnw spring-boot:run
-  ```
-  Attends la ligne `Started RiftlogApplication` (~10-20s la 1ère fois), puis dans un 2e terminal :
-  ```
-  curl -X POST http://localhost:8080/api/auth/register \
-    -H "Content-Type: application/json" \
-    -d '{"email":"demo@riftlog.local","password":"riftlog-demo-2026","displayName":"Demo"}'
-  ```
-  (une seule fois — si ça répond `EmailAlreadyUsedException`, c'est déjà fait, tant mieux.)
+## Local PostgreSQL with Docker
 
-  Puis, toujours dans ce 2e terminal, depuis `frontend/` :
-  ```
-  npm install
-  npm run dev
-  ```
-  → ouvre `http://localhost:5173`. C'est tout.
+```bash
+docker compose up -d
+```
+
+The database will be available at:
+
+```text
+Host: localhost
+Port: 5432
+Database: riftlog
+Username: riftlog
+Password: riftlog
+```
+
+This database is completely independent from Neon. And only work as a fallback.
+
+<br><br><br>
+
+# Environment Configuration
+
+The backend expects the following environment variables:
+
+```env
+DB_URL=jdbc:postgresql://...
+DB_USERNAME=...
+DB_PASSWORD=...
+```
+
+The `.env` file should be located at the root of the project with the `.vscode/launch.json`:
+
+```text
+Riftlog/
+├── .env
+.vscode/
+└── launch.json
+```
+
+The, `.vscode/launch.json` is configured to automatically load `.env` when starting the application through **Run & Debug** or **Run**.
+
+<br><br><br><br>
+
+# Running the Project - Quick start
+
+From the `backend/` directory:
+
+```bash
+./mvnw spring-boot:run
+```
+
+From the `frontend/` directory:
+
+```bash
+npm install
+npm run dev
+```
+
+Now you should be able to see the project on
+
+> http://localhost:5173/
+
+<br><br><br><br><br>
+
+---
+
+# Authentication
+
+Riftlog uses **stateless JWT authentication**.
+
+There are no server-side sessions or authentication cookies.
+
+After logging in, the API returns a JWT.
+
+Protected endpoints must receive the token using:
+
+```http
+Authorization: Bearer <token>
+```
+
+The following endpoints do not require authentication:
+
+```text
+POST /api/auth/register
+POST /api/auth/login
+```
+
+All other `/api/**` endpoints require a valid JWT.
+
+---
+
+## Creating an Account - (only if you are using Docker volumes fallback)
+
+The frontend does not currently include a login or registration screen.
+
+An account can be created directly through the API:
+
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"changeme123","displayName":"Ready Player One"}'
+```
+
+The response contains a JWT.
+
+If the email is already registered, the API will return an error indicating that the account already exists.
+
+---
+
+## Logging In - (only if you are using Docker volumes fallback)
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"changeme123"}'
+```
+
+The response contains the JWT:
+
+```json
+{
+    "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+Use this token for authenticated requests.
+
+---
+
+## Testing the API - (only if you are using Docker volumes fallback)
+
+### Get the authenticated user
+
+```bash
+curl http://localhost:8080/api/auth/me \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+### Get match history
+
+```bash
+curl http://localhost:8080/api/matches \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+Matches are private. Only matches belonging to the authenticated user are returned.
+
+### Get statistics
+
+```bash
+curl http://localhost:8080/api/stats \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+---
+
+<br><br><br><br><br><br><br><br>
+
+# ⚠️⚠️ Git & Secrets | READ THIS ⚠️⚠️
+
+The repository is ignoring files containing secrets:
+
+```gitignore
+.env
+.env.*
+!.env.example
+```
+
+The `.env.example` file included the required variables to connect to the DB - and so, to fully run the project:
+
+```env
+DB_URL=
+DB_USERNAME=
+DB_PASSWORD=
+```
+
+---
+
+# Main API Endpoints
+
+| Method | Endpoint             | Authentication |
+| ------ | -------------------- | -------------- |
+| `POST` | `/api/auth/register` | No             |
+| `POST` | `/api/auth/login`    | No             |
+| `GET`  | `/api/auth/me`       | Yes            |
+| `GET`  | `/api/matches`       | Yes            |
+| `GET`  | `/api/matches/{id}`  | Yes            |
+| `POST` | `/api/matches`       | Yes            |
+| `GET`  | `/api/stats`         | Yes            |
+
+User data is isolated: matches and decks are associated with the authenticated account.
+
+---
+
+# Features
+
+### Backend
+
+- [x] JWT authentication
+- [x] User registration
+- [x] User login
+- [x] User management
+- [x] Match management
+- [x] Round management
+- [x] Deck management
+- [x] Legend management
+- [x] Match history
+- [x] Statistics
+- [x] Match filters
+- [x] Request validation
+- [x] Global exception handling
+- [x] Flyway migrations
+- [x] Service-layer tests
+
+### Frontend
+
+- [x] Dashboard
+- [x] Navigation
+- [x] Match history
+- [ ] Play screen
+- [ ] Deck management
+- [ ] Detailed statistics
+- [ ] Login screen
+- [ ] Registration screen
+
+---
+
+# Deployment
+
+The backend is designed to be deployed with Spring Boot on Render and use Neon as its PostgreSQL database.
+
+Environment variables are configured directly in Render.
+
+See `DEPLOY.md` for the complete deployment procedure.
+
+---
+
+# Documentation
+
+| File              | Description                            |
+| ----------------- | -------------------------------------- |
+| `README.md`       | Installation and usage                 |
+| `ARCHITECTURE.md` | Backend architecture                   |
+| `FRONTEND.md`     | Frontend architecture and requirements |
+| `DEPLOY.md`       | Deployment instructions                |
+
+---
+
+<br><br>
+
+### Project
+
+Riftlog started as a university project and is intended to continue as a personal application.
+
+The goal is to provide a simple tool for Riftbound players to track their matches, decks, rounds, and performance.
