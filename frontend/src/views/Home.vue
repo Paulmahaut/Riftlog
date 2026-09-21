@@ -10,7 +10,7 @@ import ProfileIcon from '../assets/ProfileIcon.svg?component'
 import tempIcon from '../assets/vue.svg?component'
 
 import NavbarButton from '../components/NavbarButton.vue'
-import { apiFetch } from '../api.js'
+import { apiFetch, currentUser } from '../api.js'
 
 const stats = ref(null)
 const matches = ref([])
@@ -18,16 +18,20 @@ const loading = ref(true)
 const legends = ref([])
 const error = ref(null)
 
-const username = ref('Ready Player One')
+const username = ref('')
 
 async function load() {
     try {
         // STATS
         const statsResponse = await apiFetch('/api/stats')
+
         if (!statsResponse.ok) {
             throw new Error('Loading Stats failed')
         }
         stats.value = await statsResponse.json()
+
+        // USERNAME
+        username.value = currentUser?.displayName ?? 'N/A'
 
         // MATCHES
         const matchesResponse = await apiFetch('/api/matches')

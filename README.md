@@ -36,10 +36,11 @@ Running it locally
      but there is no seeded account: you must register a real user before the API will do anything
      else, since every match/deck is owned by whoever is authenticated. Either through the
      frontend's register screen once it exists, or directly:
+
+    **use precisely this command**
      ```
-     curl -X POST http://localhost:8080/api/auth/register \
-       -H "Content-Type: application/json" \
-       -d "{\"email\":\"you@example.com\",\"password\":\"changeme123\",\"displayName\":\"You\"}"
+     curl -X POST http://localhost:8080/api/auth/register -H "Content-Type: application/json" -d '{"email":"you@example.com","password":"changeme123","displayName":"Ready Player One"}'
+
      ```
      This returns a JWT `token` — send it as `Authorization: Bearer <token>` on every other
      `/api/**` call (everything except `/api/auth/register` and `/api/auth/login` requires it; the

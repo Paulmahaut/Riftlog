@@ -3,9 +3,11 @@
 // valid JWT — logs in lazily on first call and retries once on a 401 (token
 // expired) rather than surfacing that to the UI.
 
+export let currentUser = null;
+
 const DEMO_CREDENTIALS = {
-    email: "demo@riftlog.local",
-    password: "riftlog-demo-2026",
+    email: "you@example.com",
+    password: "changeme123",
 };
 
 let tokenPromise = null;
@@ -20,6 +22,13 @@ async function login() {
         throw new Error("Failed to log in as the shared demo account");
     }
     const data = await response.json();
+
+    currentUser = {
+        id: data.userId,
+        email: data.email,
+        displayName: data.displayName,
+    };
+
     return data.token;
 }
 
