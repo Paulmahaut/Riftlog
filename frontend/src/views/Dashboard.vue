@@ -20,7 +20,7 @@ async function load() {
     try {
         // STATS
         const statsResponse = await apiFetch('/api/stats')
-        
+
         if (!statsResponse.ok) {
             throw new Error('Loading Stats failed')
         }
@@ -121,31 +121,46 @@ onMounted(load)
                     <!-- Win Rate -->
                     <div class="size- inline-flex flex-col justify-center items-center gap-2.5 overflow-hidden">
                         <div class="text-center justify-center text-white text-xs font-semibold">Win rate</div>
-                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">{{ stats.overallWinRate }}%</div>
+                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
+                            <span v-if="loading">...</span>
+                            <span v-else>{{ stats.overallWinRate }}%</span>
+                        </div>
                     </div>
 
                     <!-- Favourite Card -->
                     <div class="size- inline-flex flex-col justify-center items-center gap-2.5 overflow-hidden">
                         <div class="text-center justify-center text-white text-xs font-semibold">Favourite Card</div>
-                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">Doom Slayer</div>
+                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
+                            <span v-if="loading">...</span>
+                            <span v-else>Doom Slayer</span>
+                        </div>
                     </div>
 
                     <!-- Average Score -->
                     <div class="size- inline-flex flex-col justify-center items-center gap-2.5 overflow-hidden">
                         <div class="text-center justify-center text-white text-xs font-semibold">Average score</div>
-                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">8</div>
+                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
+                            <span v-if="loading">...</span>
+                            <span v-else>8</span>
+                        </div>
                     </div>
 
                     <!-- Total Matches -->
                     <div class="size- inline-flex flex-col justify-center items-center gap-2.5 overflow-hidden">
                         <div class="text-center justify-center text-white text-xs font-semibold">Total matches</div>
-                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">{{ stats.totalMatches }}</div>
+                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
+                            <span v-if="loading">...</span>
+                            <span v-else>{{ stats.totalMatches }}</span>
+                        </div>
                     </div>
 
                     <!-- Revenge -->
                     <div class="size- inline-flex flex-col justify-center items-center gap-2.5 overflow-hidden">
                         <div class="text-center justify-center text-white text-xs font-semibold">Take your revenge on</div>
-                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">Player A</div>
+                        <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
+                            <span v-if="loading">...</span>
+                            <span v-else>Player A</span>
+                        </div>
                     </div>
                 </div>
 
