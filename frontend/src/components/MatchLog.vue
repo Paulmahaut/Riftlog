@@ -22,9 +22,24 @@ defineProps({
     deck: {
         type: String,
         default: 'N/A'
+    },
+
+    date: {
+        type: Date,
+        default: 'N/A',
     }
 
 })
+
+
+function formatDate(date) {
+    return new Date(date).toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    })
+}
+
 </script>
 
 
@@ -54,6 +69,8 @@ defineProps({
                         <span class="text-[10px]">deck :</span>
                         <span class="text-xs"> {{ deck }}</span>
                     </div>
+                    {{ formatDate(date) }}
+
                 </div>
 
 

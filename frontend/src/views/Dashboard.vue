@@ -41,6 +41,7 @@ async function load() {
             throw new Error('Loading Matches failed')
         }
         matches.value = await matchesResponse.json()
+        console.log(matches.value)
 
         // LEGENDS
         const legendsResponse = await apiFetch('/api/legends')
@@ -57,15 +58,6 @@ async function load() {
 }
 
 onMounted(load)
-
-
-const opponent = ref("The Dark Night");
-const result = ref(true); // true = WIN / false = loose
-const score = ref("12 - 7"); // string à reconsituer
-const deck = ref("MegaKnight + flame")
-
-
-
 </script>
 
 
@@ -101,22 +93,22 @@ const deck = ref("MegaKnight + flame")
 
             <!-- Shortcut Buttons -->
             <div class="inline-flex justify-start items-center gap-10">
-                <div class="flex-1 py-4 rounded-lg inline-flex flex-col justify-center items-center gap-2.5 bg-[var(--background-300)] shadow-[10px_10px_22px_0px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,255,255,0.80)] transition duration-150 ease-in-out overflow-hidden" @click="() => $router.push('/')">
+                <div class="flex-1 py-4 rounded-lg inline-flex flex-col justify-center items-center gap-2.5 bg-[var(--background-300)] shadow-[10px_10px_22px_0px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,255,255,0.80)] transition duration-150 ease-in-out hover:cursor-pointer overflow-hidden" @click="() => $router.push('/')">
                     <HomeIcon class="h-6 invert opacity-65" />
                     <div class="text-center justify-center text-[var(--background-700)] text-base font-bold ">Home</div>
                 </div>
 
-                <div class="flex-1 py-4 rounded-lg inline-flex flex-col justify-center items-center gap-2.5 bg-[var(--background-300)] shadow-[10px_10px_22px_0px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,255,255,0.80)] transition duration-150 ease-in-out overflow-hidden" @click="() => $router.push('/play')">
+                <div class="flex-1 py-4 rounded-lg inline-flex flex-col justify-center items-center gap-2.5 bg-[var(--background-300)] shadow-[10px_10px_22px_0px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,255,255,0.80)] transition duration-150 ease-in-out hover:cursor-pointer overflow-hidden" @click="() => $router.push('/play')">
                     <PlayIcon class="h-6 invert opacity-65" />
                     <div class="text-center justify-center text-[var(--background-700)] text-base font-bold ">Play</div>
                 </div>
 
-                <div class="flex-1 py-4 rounded-lg inline-flex flex-col justify-center items-center gap-2.5 bg-[var(--background-300)] shadow-[10px_10px_22px_0px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,255,255,0.80)] transition duration-150 ease-in-out overflow-hidden" @click="() => $router.push('/decks')">
+                <div class="flex-1 py-4 rounded-lg inline-flex flex-col justify-center items-center gap-2.5 bg-[var(--background-300)] shadow-[10px_10px_22px_0px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,255,255,0.80)] transition duration-150 ease-in-out hover:cursor-pointer overflow-hidden" @click="() => $router.push('/decks')">
                     <DeckIcon class="h-6 invert opacity-65" />
                     <div class="text-center justify-center text-[var(--background-700)] text-base font-bold ">Decks</div>
                 </div>
 
-                <div class="flex-1 py-4 rounded-lg inline-flex flex-col justify-center items-center gap-2.5 bg-[var(--background-300)] shadow-[10px_10px_22px_0px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,255,255,0.80)] transition duration-150 ease-in-out overflow-hidden" @click="() => $router.push('/settings')">
+                <div class="flex-1 py-4 rounded-lg inline-flex flex-col justify-center items-center gap-2.5 bg-[var(--background-300)] shadow-[10px_10px_22px_0px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,255,255,0.80)] transition duration-150 ease-in-out hover:cursor-pointer overflow-hidden" @click="() => $router.push('/settings')">
                     <ProfileIcon class="h-6 invert opacity-65" />
                     <div class="text-center justify-center text-[var(--background-700)] text-base font-bold ">Profile</div>
                 </div>
@@ -133,7 +125,7 @@ const deck = ref("MegaKnight + flame")
                         <div class="text-center justify-center text-white text-xs font-semibold">Win rate</div>
                         <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
                             <span v-if="loading">...</span>
-                            <span v-else>{{ stats.overallWinRate }}%</span>
+                            <span v-else>{{ stats.overallWinRate * 100 }}%</span>
                         </div>
                     </div>
 
@@ -180,8 +172,7 @@ const deck = ref("MegaKnight + flame")
                     <div class="text-center justify-center text-white text-sm font-light">see more</div>
                 </div>
 
-                <MatchLog :opponent='opponent' :result='result' :score='score' :deck='deck' />
-
+                <MatchLog v-for="match in matches" :key="match.id" :opponent="match.opponentName" :result="match.result === 'WIN'" :score="`${match.myFinalScore} - ${match.opponentFinalScore}`" :deck="match.myDeckName" :date="match.playedAt" />
             </div>
 
 
