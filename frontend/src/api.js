@@ -6,8 +6,8 @@
 export let currentUser = null;
 
 const DEMO_CREDENTIALS = {
-    email: "you@example.com",
-    password: "changeme123",
+    email: "demo@riftlog.local",
+    password: "riftlog-demo-2026",
 };
 
 let tokenPromise = null;

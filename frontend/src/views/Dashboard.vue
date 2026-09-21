@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { apiFetch, currentUser } from '../api.js'
 import NavBarLeft from '../components/NavBarLeft.vue'
+import MatchLog from '../components/MatchLog.vue'
 
 import HomeIcon from '../assets/HomeIcon.svg?component'
 import PlayIcon from '../assets/PlayIcon.svg?component'
@@ -56,6 +57,15 @@ async function load() {
 }
 
 onMounted(load)
+
+
+const opponent = ref("The Dark Night");
+const result = ref(true); // true = WIN / false = loose
+const score = ref("12 - 7"); // string à reconsituer
+const deck = ref("MegaKnight + flame")
+
+
+
 </script>
 
 
@@ -164,63 +174,14 @@ onMounted(load)
                     </div>
                 </div>
 
-
-
-
-
-
-
-
-
-
                 <div class="self-stretch h-0 outline outline-offset-[-1px] outline-[var(--background-300)] rounded-full"></div>
-
                 <div class="self-stretch inline-flex justify-between items-center">
                     <div class="text-center justify-center text-white text-lg font-bold">Your matches</div>
                     <div class="text-center justify-center text-white text-sm font-light">see more</div>
                 </div>
 
-                <div class="self-stretch flex-1 flex flex-col justify-start items-center gap-3.5 overflow-hidden">
-                    <div class="self-stretch px-6 py-5 relative bg-Outer-Space-900 rounded-xl inline-flex justify-between items-center overflow-hidden">
-                        <div class="size- flex justify-start items-center gap-6">
-                            <div class="size-11 bg-Outer-Space-400"></div>
-                            <div class="size- inline-flex flex-col justify-center items-start">
-                                <div class="self-stretch justify-center text-white text-xl font-bold font-['Inter']">Against</div>
-                                <div class="justify-center text-white text-lg font-normal font-['Inter']">Doom Slayer</div>
-                            </div>
-                        </div>
-                        <div class="w-3 h-7 outline outline-[3px] outline-offset-[-1.50px] outline-Outer-Space-300"></div>
-                        <div class="size- left-[427px] top-[27px] absolute flex justify-center items-center gap-2.5 overflow-hidden">
-                            <div class="text-center justify-center text-emerald-400 text-3xl font-bold font-['Inter'] tracking-widest">12 - 7</div>
-                        </div>
-                    </div>
-                    <div class="self-stretch px-6 py-5 relative bg-Outer-Space-900 rounded-xl inline-flex justify-between items-center overflow-hidden">
-                        <div class="size- flex justify-start items-center gap-6">
-                            <div class="size-11 bg-Outer-Space-400"></div>
-                            <div class="size- inline-flex flex-col justify-center items-start">
-                                <div class="self-stretch justify-center text-white text-xl font-bold font-['Inter']">Against</div>
-                                <div class="justify-center text-white text-lg font-normal font-['Inter']">Doom Slayer</div>
-                            </div>
-                        </div>
-                        <div class="w-3 h-7 outline outline-[3px] outline-offset-[-1.50px] outline-Outer-Space-300"></div>
-                        <div class="size- left-[426px] top-[27px] absolute flex justify-center items-center gap-2.5 overflow-hidden">
-                            <div class="text-center justify-center text-red-500 text-3xl font-bold font-['Inter'] tracking-widest">8 - 12</div>
-                        </div>
-                    </div>
-                    <div class="self-stretch px-6 py-5 relative bg-Outer-Space-900 rounded-xl inline-flex justify-between items-center overflow-hidden">
-                        <div class="size- flex justify-start items-center gap-6">
-                            <div class="size-11 bg-Outer-Space-400"></div>
-                            <div class="size- inline-flex flex-col justify-center items-start">
-                                <div class="self-stretch justify-center text-white text-xl font-bold font-['Inter']">Against</div>
-                                <div class="justify-center text-white text-lg font-normal font-['Inter']">Doom Slayer</div>
-                            </div>
-                        </div>
-                        <div class="w-3 h-7 outline outline-[3px] outline-offset-[-1.50px] outline-Outer-Space-300"></div>
-                        <div class="size- left-[426px] top-[27px] absolute flex justify-center items-center gap-2.5 overflow-hidden">
-                            <div class="text-center justify-center text-red-500 text-3xl font-bold font-['Inter'] tracking-widest">8 - 12</div>
-                        </div>
-                    </div>
-                </div>
+                <MatchLog :opponent='opponent' :result='result' :score='score' :deck='deck' />
+
             </div>
 
 
