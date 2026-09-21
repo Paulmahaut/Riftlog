@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import Home from "../views/Home.vue";
 import Play from "../views/Play.vue";
-import Stats from "../views/Stats.vue";
+import Dashboard from "../views/Dashboard.vue";
 import Decks from "../views/Decks.vue";
 import Settings from "../views/Settings.vue";
 
@@ -19,8 +19,8 @@ const router = createRouter({
             component: Play,
         },
         {
-            path: "/stats",
-            component: Stats,
+            path: "/dashboard",
+            component: Dashboard,
         },
         {
             path: "/decks",

@@ -6,6 +6,7 @@
     --bg: rgba(52, 58, 65, 1);
     --bg-navbar: rgba(38, 42, 48, 1);
     --buttonNavbar-bg-hover: rgba(52, 58, 65, 1);
+    --buttonNavbar-bg-active: rgba(92, 102, 113, 1);
 
     --border: #e5e4e7;
     --code-bg: #f4f3ec;
