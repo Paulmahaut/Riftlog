@@ -182,6 +182,23 @@ From the `backend/` directory:
 ```bash
 ./mvnw spring-boot:run
 ```
+<br>
+
+BUT this commmand doesn't work all the time depending on your current computer config. <br>
+
+Prefer using this : <br>
+From the `backend/` directory:
+```bash
+./mvnw clean compile
+```
+```bash
+./mvnw dependency:resolve
+```
+> windows + shift + P --> **Java: Clean Java Language Server Workspace**
+
+wait till vscode restart, then simply click the vscode buttons to **Run & Debug**
+
+<br>
 
 From the `frontend/` directory:
 
