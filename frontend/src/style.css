@@ -8,6 +8,11 @@
     --buttonNavbar-bg-hover: rgba(52, 58, 65, 1);
     --buttonNavbar-bg-active: rgba(92, 102, 113, 1);
 
+    --background-200: rgba(225, 228, 232, 1);
+    --background-300: rgba(204, 210, 216, 1);
+    --background-600: rgba(92, 102, 113, 1);
+    --background-700: rgba(73, 81, 90, 1);
+
     --border: #e5e4e7;
     --code-bg: #f4f3ec;
     --accent: #aa3bff;
