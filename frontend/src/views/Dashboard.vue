@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { apiFetch, currentUser } from '../api.js'
+import { ref, computed, onMounted } from 'vue'
+import { apiFetch } from '../api.js'
 import NavBarLeft from '../components/NavBarLeft.vue'
 import MatchLog from '../components/MatchLog.vue'
 
@@ -41,7 +41,6 @@ async function load() {
             throw new Error('Loading Matches failed')
         }
         matches.value = await matchesResponse.json()
-        console.log(matches.value)
 
         // LEGENDS
         const legendsResponse = await apiFetch('/api/legends')
@@ -58,6 +57,43 @@ async function load() {
 }
 
 onMounted(load)
+
+
+const favouriteDeck = computed(() => {
+    if (!matches.value.length) return 'N/A'
+
+    const deckCounts = {}
+
+    for (const match of matches.value) {
+        const deck = match.myDeckName
+
+        if (deck) {
+            deckCounts[deck] = (deckCounts[deck] || 0) + 1
+        }
+    }
+
+    return Object.entries(deckCounts)
+        .sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
+})
+
+const revengePlayer = computed(() => {
+    const losses = matches.value.filter(match => match.result === 'LOSS')
+
+    if (!losses.length) return 'N/A'
+
+    const opponentCounts = {}
+
+    for (const match of losses) {
+        const opponent = match.opponentName
+
+        if (opponent) {
+            opponentCounts[opponent] = (opponentCounts[opponent] || 0) + 1
+        }
+    }
+
+    return Object.entries(opponentCounts)
+        .sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
+})
 </script>
 
 
@@ -131,10 +167,10 @@ onMounted(load)
 
                     <!-- Favourite Card -->
                     <div class="size- inline-flex flex-col justify-center items-center gap-2.5 overflow-hidden">
-                        <div class="text-center justify-center text-white text-xs font-semibold">Favourite Card</div>
+                        <div class="text-center justify-center text-white text-xs font-semibold">Favourite Deck</div>
                         <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
                             <span v-if="loading">...</span>
-                            <span v-else>Doom Slayer</span>
+                            <span v-else>{{ favouriteDeck }}</span>
                         </div>
                     </div>
 
@@ -161,7 +197,7 @@ onMounted(load)
                         <div class="text-center justify-center text-white text-xs font-semibold">Take your revenge on</div>
                         <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
                             <span v-if="loading">...</span>
-                            <span v-else>Player A</span>
+                            <span v-else>{{ revengePlayer }}</span>
                         </div>
                     </div>
                 </div>
@@ -173,31 +209,6 @@ onMounted(load)
                 </div>
 
                 <MatchLog v-for="match in matches" :key="match.id" :opponent="match.opponentName" :result="match.result === 'WIN'" :score="`${match.myFinalScore} - ${match.opponentFinalScore}`" :deck="match.myDeckName" :date="match.playedAt" />
-            </div>
-
-
-            <!-- Stats -->
-            <div v-if="stats">
-                <h1 class="text-3xl font-bold">Stats:</h1>
-                <pre>{{ JSON.stringify(stats, null, 2) }}</pre>
-                <pre>{{ stats.overallWinRate }}</pre>
-            </div>
-
-            <!-- Matches -->
-            <div>
-                <h1 class="text-3xl font-bold">Matches:</h1>
-                <pre v-for="match in matches" :key="match.id">{{ JSON.stringify(match, null, 2) }}</pre>
-            </div>
-
-            <!-- Legends -->
-            <div>
-                <h1 class="text-3xl font-bold">Legends:</h1>
-                <pre v-for="legend in legends" :key="legend.id">{{ JSON.stringify(legend, null, 2) }}</pre>
-            </div>
-
-            <!-- Error -->
-            <div v-if="error">
-                {{ error }}
             </div>
         </div>
 
