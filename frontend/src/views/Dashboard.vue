@@ -151,7 +151,7 @@ const revengePlayer = computed(() => {
             </div>
 
 
-            <div class="self-stretch h-[465px] pt-6 inline-flex flex-col justify-start items-start gap-3.5">
+            <div class="self-stretch pt-6 inline-flex flex-col justify-start items-start gap-3.5">
                 <div class="text-center justify-center text-white text-2xl font-bold">Your Stats</div>
 
                 <!-- Fast Stats Display -->

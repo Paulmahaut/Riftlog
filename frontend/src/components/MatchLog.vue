@@ -46,7 +46,7 @@ function formatDate(date) {
 
 <template>
     <div class="self-stretch h-fit flex flex-col justify-start items-center gap-3.5 overflow-hidden bg-[var(--background-900)] rounded-xl hover:scale-102 transition duration-300 ease-in-out">
-        <div class="self-stretch px-6 py-8 relative rounded-xl inline-flex justify-between items-center overflow-hidden">
+        <div class="self-stretch px-6 py-5 relative rounded-xl inline-flex justify-between items-center overflow-hidden">
 
             <div class="size- flex justify-start items-center gap-6">
                 <SwordIcon class="h-9" />
