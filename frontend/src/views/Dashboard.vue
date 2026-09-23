@@ -94,6 +94,13 @@ const revengePlayer = computed(() => {
     return Object.entries(opponentCounts)
         .sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
 })
+
+const recentMatches = computed(() => {
+    return [...matches.value].sort(
+        (a, b) => new Date(b.playedAt) - new Date(a.playedAt)
+    )
+})
+
 </script>
 
 
@@ -161,7 +168,7 @@ const revengePlayer = computed(() => {
                         <div class="text-center justify-center text-white text-xs font-semibold">Win rate</div>
                         <div class="text-center justify-center text-[var(--background-200)] text-xl font-bold">
                             <span v-if="loading">...</span>
-                            <span v-else>{{ stats.overallWinRate * 100 }}%</span>
+                            <span v-else>{{ (stats.overallWinRate * 100).toFixed(1) }}%</span>
                         </div>
                     </div>
 
@@ -208,7 +215,23 @@ const revengePlayer = computed(() => {
                     <div class="text-center justify-center text-white text-sm font-light">see more</div>
                 </div>
 
-                <MatchLog v-for="match in matches" :key="match.id" :opponent="match.opponentName" :result="match.result === 'WIN'" :score="`${match.myFinalScore} - ${match.opponentFinalScore}`" :deck="match.myDeckName" :date="match.playedAt" />
+                <div v-for="(match, index) in recentMatches" :key="match.id" class="w-full">
+
+                    <div v-if="index === 0 || new Date(match.playedAt).toDateString() !== new Date(recentMatches[index - 1].playedAt).toDateString()" class="flex items-center gap-3 my-4">
+                        <!-- left line -->
+                        <div class="flex-1 h-px bg-white/20"></div>
+
+                        <span class="text-xs text-white/50">
+                            {{ new Date(match.playedAt).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) }}
+                        </span>
+
+                        <!-- right line -->
+                        <div class="flex-1 h-px bg-white/20"></div>
+                    </div>
+
+                    <MatchLog :opponent="match.opponentName" :result="match.result === 'WIN'" :score="`${match.myFinalScore} - ${match.opponentFinalScore}`" :deck="match.myDeckName" :date="match.playedAt" />
+
+                </div>
             </div>
         </div>
 
