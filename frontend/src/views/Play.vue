@@ -254,13 +254,6 @@ onUnmounted(() => {
     document.removeEventListener('click', closeDropdownOnOutsideClick)
 })
 
-
-/*
-- ne pas utiliser les opponents des matchs précédent, mais directement les "Users" + supprimer la table player qui ne sert à rien
-- faire une page register + page login
-- améliorer la beauté de la page 'Play.vue'
-- 
-*/
 </script>
 
 
