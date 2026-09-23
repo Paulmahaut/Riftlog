@@ -189,13 +189,15 @@ async function addMatch() {
 function filteredDecks(search) {
     const value = search.toLowerCase().trim()
 
-    if (!value) {
-        return decks.value
-    }
+    const filtered = !value
+        ? decks.value
+        : decks.value.filter(deck =>
+            deck.name.toLowerCase().includes(value)
+        )
 
-    return decks.value.filter(deck =>
-        deck.name.toLowerCase().includes(value)
-    )
+    return [...new Map(
+        filtered.map(deck => [deck.name.toLowerCase(), deck])
+    ).values()]
 }
 
 function filteredLegends(search) {
@@ -224,7 +226,12 @@ function filteredOpponents(search) {
     )
 }
 
-
+/*
+- ne pas utiliser les opponents des matchs précédent, mais directement les "Users" + supprimer la table player qui ne sert à rien
+- faire une page register + page login
+- améliorer la beauté de la page 'Play.vue'
+- 
+*/
 </script>
 
 
@@ -276,6 +283,7 @@ function filteredOpponents(search) {
 
                         <!-- You Deck -->
                         <div class="relative">
+                            <div class="text-left justify-center pb-1 text-black text-xl font-semibold italic">Deck</div>
 
                             <input v-model="you.deck" @focus="openDropdown = 'youDeck'" @click.stop type="text" placeholder="select your Deck" class="w-full p-4 bg-[var(--background-300)] rounded-lg outline-none text-[var(--background-600)] text-sm font-medium placeholder:text-[var(--background-600)]" />
 
@@ -294,6 +302,7 @@ function filteredOpponents(search) {
 
                         <!-- You Legend -->
                         <div class="relative">
+                            <div class="text-left justify-center pb-1 text-black text-xl font-semibold italic">Legend</div>
 
                             <input v-model="you.legend" @focus="openDropdown = 'youLegend'" @click.stop type="text" placeholder="select your Legend" class="w-full p-4 bg-[var(--background-300)] rounded-lg outline-none text-[var(--background-600)] text-sm font-medium placeholder:text-[var(--background-600)]" />
 
@@ -345,7 +354,7 @@ function filteredOpponents(search) {
 
                         <!-- Opponent Deck -->
                         <div class="relative">
-
+                            <div class="text-left justify-center pb-1 text-white text-xl font-semibold italic">Deck</div>
                             <input v-model="opponent.deck" @focus="openDropdown = 'opponentDeck'" @click.stop type="text" placeholder="select opponent Deck" class="w-full p-4 bg-[var(--background-600)] rounded-lg outline-none text-[var(--background-400)] text-sm font-medium placeholder:text-[var(--background-400)]" />
 
                             <div v-if="openDropdown === 'opponentDeck'" class="absolute left-0 right-0 top-full mt-2 z-50 bg-[var(--background-800)] rounded-lg overflow-hidden shadow-xl max-h-48 overflow-y-auto">
@@ -362,7 +371,7 @@ function filteredOpponents(search) {
 
                         <!-- Oppoent Legend -->
                         <div class="relative">
-
+                            <div class="text-left justify-center pb-1 text-white text-xl font-semibold italic">Legend</div>
                             <input v-model="opponent.legend" @focus="openDropdown = 'opponentLegend'" @click.stop type="text" placeholder="select opponent Legend" class="w-full p-4 bg-[var(--background-600)] rounded-lg outline-none text-[var(--background-400)] text-sm font-medium placeholder:text-[var(--background-400)]" />
 
                             <div v-if="openDropdown === 'opponentLegend'" class="absolute left-0 right-0 top-full mt-2 z-50 bg-[var(--background-800)] rounded-lg overflow-hidden shadow-xl max-h-48 overflow-y-auto">
