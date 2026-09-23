@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../api.js'
 import NavBarLeft from '../components/NavBarLeft.vue'
+import Test from '../components/test.vue'
 
 const loading = ref(true)
 const error = ref(null)
@@ -40,15 +41,10 @@ onMounted(load)
         <NavBarLeft :loading="loading" :username="username" />
 
         <!-- Main Test -->
-        <div class="flex flex-col gap-16 w-full max-h-screen p-8 overflow-y-auto bg-[var(--bg)]">
-            <div>
-                <h1 class="text-3xl font-bold">Play</h1>
-            </div>
+        <div class="flex flex-col gap-16 w-full max-h-screen overflow-y-auto bg-[var(--bg)]">
 
-            <!-- Error -->
-            <div v-if="error">
-                {{ error }}
-            </div>
+            <Test />
+
 
         </div>
 
