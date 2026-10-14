@@ -6,6 +6,7 @@ import NavBarLeft from '../components/NavBarLeft.vue'
 const loading = ref(true)
 const error = ref(null)
 const creating = ref(false)
+const deletingId = ref(null)
 
 const username = ref('')
 
@@ -132,6 +133,40 @@ function cancelCreate() {
     }
 
     showCreateForm.value = false
+}
+
+// =========================
+// DELETE DECK
+// =========================
+
+async function deleteDeck(deck) {
+    error.value = null
+
+    if (!confirm(`Delete deck "${deck.name}"?`)) {
+        return
+    }
+
+    deletingId.value = deck.id
+
+    try {
+        const response = await apiFetch(`/api/decks/${deck.id}`, {
+            method: 'DELETE'
+        })
+
+        if (!response.ok) {
+            const message = await response.text()
+            throw new Error(
+                message || 'Impossible de supprimer le deck'
+            )
+        }
+
+        decks.value = decks.value.filter((d) => d.id !== deck.id)
+
+    } catch (e) {
+        error.value = e.message
+    } finally {
+        deletingId.value = null
+    }
 }
 
 // =========================
@@ -276,14 +311,20 @@ onMounted(load)
                 <div v-for="deck in decks" :key="deck.id" class="flex flex-col gap-4 p-5 rounded-xl bg-[var(--background-900)] shadow">
 
                     <!-- Deck name -->
-                    <div>
-                        <h2 class="text-xl font-bold text-[var(--background-300)]">
-                            {{ deck.name }}
-                        </h2>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-[var(--background-300)]">
+                                {{ deck.name }}
+                            </h2>
 
-                        <p class="mt-1 text-sm opacity-60">
-                            Deck #{{ deck.id }}
-                        </p>
+                            <p class="mt-1 text-sm opacity-60">
+                                Deck #{{ deck.id }}
+                            </p>
+                        </div>
+
+                        <button @click="deleteDeck(deck)" :disabled="deletingId === deck.id" class="text-sm opacity-60 hover:opacity-100 hover:text-red-400 disabled:opacity-30" title="Delete deck">
+                            {{ deletingId === deck.id ? '...' : 'x' }}
+                        </button>
                     </div>
 
 

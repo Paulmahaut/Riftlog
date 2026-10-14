@@ -11,4 +11,6 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
     Optional<Deck> findByNameIgnoreCaseAndLegendIdAndOwnerId(String name, Long legendId, Long ownerId);
 
     List<Deck> findByOwnerId(Long ownerId);
+
+    Optional<Deck> findByIdAndOwnerId(Long id, Long ownerId);
 }

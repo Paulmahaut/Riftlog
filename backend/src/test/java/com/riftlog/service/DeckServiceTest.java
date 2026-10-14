@@ -1,6 +1,7 @@
 package com.riftlog.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -20,7 +21,10 @@ import com.riftlog.dto.DeckResponse;
 import com.riftlog.entity.Deck;
 import com.riftlog.entity.Legend;
 import com.riftlog.entity.User;
+import com.riftlog.exception.DeckInUseException;
+import com.riftlog.exception.NotFoundException;
 import com.riftlog.repository.DeckRepository;
+import com.riftlog.repository.MatchRepository;
 import com.riftlog.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +36,8 @@ class DeckServiceTest {
     private LegendService legendService;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private MatchRepository matchRepository;
 
     @InjectMocks
     private DeckService deckService;
@@ -94,5 +100,47 @@ class DeckServiceTest {
         assertEquals("Zoe Tempo", response.name());
         assertEquals("Zoe", response.legendName());
         verify(legendService).findOrCreateByName("Zoe");
+    }
+
+    @Test
+    void delete_removesDeckWhenNotUsedInAnyMatch() {
+        Legend legend = new Legend();
+        legend.setId(1L);
+        legend.setName("Ashe");
+        Deck deck = new Deck();
+        deck.setId(5L);
+        deck.setName("Ashe Aggro");
+        deck.setLegend(legend);
+        deck.setOwner(owner);
+        when(deckRepository.findByIdAndOwnerId(5L, 1L)).thenReturn(Optional.of(deck));
+        when(matchRepository.existsByMyDeckIdOrOpponentDeckId(5L, 5L)).thenReturn(false);
+
+        deckService.delete(5L, 1L);
+
+        verify(deckRepository).delete(deck);
+    }
+
+    @Test
+    void delete_throwsWhenDeckUsedInMatchHistory() {
+        Legend legend = new Legend();
+        legend.setId(1L);
+        legend.setName("Ashe");
+        Deck deck = new Deck();
+        deck.setId(5L);
+        deck.setName("Ashe Aggro");
+        deck.setLegend(legend);
+        deck.setOwner(owner);
+        when(deckRepository.findByIdAndOwnerId(5L, 1L)).thenReturn(Optional.of(deck));
+        when(matchRepository.existsByMyDeckIdOrOpponentDeckId(5L, 5L)).thenReturn(true);
+
+        assertThrows(DeckInUseException.class, () -> deckService.delete(5L, 1L));
+        verify(deckRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_throwsWhenDeckNotFoundForOwner() {
+        when(deckRepository.findByIdAndOwnerId(5L, 1L)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> deckService.delete(5L, 1L));
     }
 }
