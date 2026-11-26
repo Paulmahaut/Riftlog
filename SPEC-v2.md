@@ -128,7 +128,13 @@ Les tables `match_players` et `game_players` remplacent les colonnes « moi / ad
    - file d'envoi des matchs, testée et vérifiée de bout en bout : match en attente hors-ligne, puis envoi automatique au retour du réseau.
 
    Le token JWT passe de 24 h à 30 jours. Détails dans `FRONTEND.md`.
-3. **Duel mobile** et écran d'après-partie.
+3. **Duel mobile** et écran d'après-partie ✅ (2026-11-26) :
+   - lancement : format, ma légende, adversaire (ami, invité connu ou nouvel invité), légende adverse ;
+   - duel d'après la maquette : choix de qui commence, Conquer / Hold / Ability, annuler, chrono, Bo1 / Bo3, menu `⋯` (égalité, abandon, quitter, supprimer) ;
+   - fin de game : courbe du score, liste des points, battlefields et mulligans facultatifs ;
+   - fin de match : résumé, « Revanche », envoi automatique via la file d'envoi ;
+   - le match en cours est sauvegardé sur le téléphone à chaque point : fermer l'appli ou recharger ne perd rien ;
+   - vérifié de bout en bout (Bo3 complet, rechargement en cours de game, envoi au serveur).
 4. **Historique et stats** sur PC.
 5. **Deck builder**.
 6. **Saisie manuelle** pour les tournois en ligne.
@@ -163,5 +169,6 @@ La branche git `Post-Uni` sera fusionnée dans `main` en **gardant tous ses comm
 
 - ~~La base Neon de prod contient-elle des données à garder ?~~ Non (vérifié le 2026-11-26) : seulement des données de test (Alice/Bob, légendes fictives Ada/Jiro/Kaya, 10 matchs). On repart d'un schéma propre.
 - DA PC « joli » : lien ou capture de Papertree.
+- ~~Option pour ne pas télécharger les données ?~~ Inutile : tout ce qui est gardé sur l'appareil pèse environ 330 Ko (appli, polices et icônes) plus 37 Ko de données de jeu (7 Ko compressés). Aucune image de carte n'est téléchargée.
 - L'hébergement : le plan gratuit de Render met le serveur en veille, ce qui ralentit le premier envoi.
 - Riftatlas : API, conditions d'utilisation, comment fait Riftlite.

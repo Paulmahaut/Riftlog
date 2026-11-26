@@ -1,10 +1,18 @@
 <script setup>
+import { onMounted, ref } from "vue";
 import AppIcon from "../components/AppIcon.vue";
 import MatchList from "../components/MatchList.vue";
 import { FORMAT_LABEL } from "../lib/format.js";
 import { outboxState } from "../lib/outbox.js";
 import { session } from "../lib/session.js";
 import { network, syncNow } from "../lib/sync.js";
+import { currentGame, loadLiveMatch, score } from "../lib/duel.js";
+
+const live = ref(null);
+onMounted(async () => {
+    const match = await loadLiveMatch(session.user.id);
+    live.value = match && match.phase !== "match-over" ? match : null;
+});
 </script>
 
 <template>
@@ -12,6 +20,24 @@ import { network, syncNow } from "../lib/sync.js";
         <h1 class="font-display text-3xl font-bold tracking-wide">Salut {{ session.user?.displayName }}</h1>
 
         <RouterLink
+            v-if="live"
+            :to="{ name: 'duel' }"
+            class="card flex items-center justify-between gap-4 p-5 transition-colors hover:bg-surface-2"
+        >
+            <div>
+                <p class="label">Match en cours</p>
+                <p class="mt-1 font-display text-2xl font-bold">Reprendre contre {{ live.players[1].name }}</p>
+                <p class="mt-1 text-sm text-muted">
+                    {{ FORMAT_LABEL[live.format] }} · Game {{ currentGame(live).number }} ·
+                    {{ score(currentGame(live), 1) }}–{{ score(currentGame(live), 2) }}
+                </p>
+            </div>
+            <span class="grid size-14 shrink-0 place-items-center rounded-full bg-fg text-bg">
+                <AppIcon name="play" class="size-6" />
+            </span>
+        </RouterLink>
+        <RouterLink
+            v-else
             to="/play"
             class="card flex items-center justify-between gap-4 p-5 transition-colors hover:bg-surface-2"
         >

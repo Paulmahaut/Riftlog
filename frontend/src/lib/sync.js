@@ -24,10 +24,11 @@ export async function syncNow({ forceReference = false } = {}) {
         return;
     }
     try {
-        await flushOutbox(userId);
+        const { sent } = await flushOutbox(userId);
         const status = await referenceStatus();
         const stale = !status || Date.now() - Date.parse(status.syncedAt) > REFERENCE_MAX_AGE_MS;
-        if (forceReference || stale) {
+        // After an upload too: a guest added offline now exists on the server and gets an id.
+        if (forceReference || stale || sent > 0) {
             await refreshReferenceData();
             await refreshProfile();
         }

@@ -4,7 +4,8 @@ import { useRoute } from "vue-router";
 import AppShell from "./components/AppShell.vue";
 
 const route = useRoute();
-const bare = computed(() => route.meta.public);
+// Login pages and the duel screen have no navigation around them.
+const bare = computed(() => route.meta.public || route.meta.fullscreen);
 </script>
 
 <template>

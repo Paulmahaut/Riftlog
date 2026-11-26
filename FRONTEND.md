@@ -15,7 +15,8 @@ npm run preview    # sert dist/ sur :4173, avec le service worker (pour tester l
 ```
 
 Pour tester sur un téléphone en local : `npm run dev -- --host`, puis ouvrir l'adresse « Network »
-affichée par Vite. Le hors-ligne ne fonctionne qu'avec `build` + `preview` (ou en prod) : en mode
+affichée par Vite. Le backend doit autoriser cette adresse dans `CORS_ALLOWED_ORIGINS`
+(ex. `http://192.168.1.20:5173`). Le hors-ligne ne fonctionne qu'avec `build` + `preview` (ou en prod) : en mode
 `dev`, il n'y a pas de service worker.
 
 `npm run preview` tourne sur le port 4173 : le backend doit l'autoriser, avec
@@ -49,6 +50,7 @@ src/
 │   ├── db.js            base IndexedDB (cards, players, outbox, meta)
 │   ├── reference.js     cache des légendes, battlefields, joueurs et invités
 │   ├── outbox.js        file des matchs à envoyer (+ outbox.test.js)
+│   ├── duel.js          règles du compteur (points, games, Bo3) et match en cours (+ duel.test.js)
 │   ├── sync.js          envoi et rafraîchissement automatiques quand le réseau est là
 │   ├── theme.js         thèmes « table » et « lecture »
 │   └── format.js        dates, résultats, libellés
@@ -74,6 +76,10 @@ ou en `NetworkError` (serveur injoignable). `describeError(e)` donne un message 
 téléphone (`crypto.randomUUID()`), donc renvoyer un match ne crée jamais de doublon côté serveur.
 Un match refusé par le serveur (400) reste sur l'appareil avec la raison, visible dans Réglages.
 
+**Duel** : toute la logique est dans `lib/duel.js` (fonctions pures, testées). `DuelView` ne fait
+qu'afficher et appeler ces fonctions ; le match en cours est réenregistré dans IndexedDB à chaque changement.
+Siège 1 = le propriétaire du téléphone (moitié du bas), siège 2 = l'adversaire (moitié du haut, retournée).
+
 **Session** : le token dure 30 jours. S'il expire, l'appli continue de marcher hors-ligne
 et un bandeau demande de se reconnecter pour envoyer les matchs.
 
@@ -81,5 +87,6 @@ et un bandeau demande de se reconnecter pour envoyer les matchs.
 
 - Étape 2 (socle) : connexion, inscription, navigation mobile et PC, thèmes, PWA, cache hors-ligne,
   file d'envoi. ✅
-- Étape 3 : l'écran de duel (`views/PlayView.vue` est pour l'instant un écran d'attente).
+- Étape 3 : lancement d'un match (`PlayView`), duel plein écran (`DuelView`, `DuelHalf`), fin de game
+  et de match. ✅
 - Étape 4 : détail d'un match et statistiques. Étape 5 : deck builder.

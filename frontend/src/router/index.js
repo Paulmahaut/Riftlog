@@ -8,6 +8,8 @@ const routes = [
     { path: "/register", name: "register", component: () => import("../views/RegisterView.vue"), meta: { public: true, title: "Créer un compte" } },
     { path: "/", name: "home", component: () => import("../views/HomeView.vue"), meta: { title: "Accueil" } },
     { path: "/play", name: "play", component: () => import("../views/PlayView.vue"), meta: { title: "Jouer" } },
+    // Full screen, no navigation: the phone lies on the table between the two players.
+    { path: "/play/duel", name: "duel", component: () => import("../views/DuelView.vue"), meta: { title: "Duel", fullscreen: true } },
     { path: "/matches", name: "matches", component: () => import("../views/MatchesView.vue"), meta: { title: "Matchs" } },
     { path: "/decks", name: "decks", component: () => import("../views/DecksView.vue"), meta: { title: "Decks" } },
     { path: "/settings", name: "settings", component: () => import("../views/SettingsView.vue"), meta: { title: "Réglages" } },

@@ -29,3 +29,14 @@ export function outcomeFor(match, userId) {
 }
 
 export const OUTCOME_LABEL = { win: "Victoire", loss: "Défaite", draw: "Nul" };
+
+/** "Jinx - Loose Cannon" → "Jinx": short enough for the duel screen. */
+export function legendShort(name) {
+    return name ? name.split(" - ")[0] : "";
+}
+
+/** 754000 → "12:34" */
+export function formatClock(ms) {
+    const seconds = Math.max(0, Math.floor(ms / 1000));
+    return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
