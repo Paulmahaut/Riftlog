@@ -1,22 +1,31 @@
 {
-  "name": "frontend",
+  "name": "riftlog-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "icons": "pwa-assets-generator"
   },
   "dependencies": {
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
     "@tailwindcss/vite": "^4.3.3",
+    "idb": "^8.0.4",
     "tailwindcss": "^4.3.3",
     "vue": "^3.5.42",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
+    "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-vue": "^6.0.8",
+    "fake-indexeddb": "^6.2.8",
     "vite": "^8.3.0",
-    "vite-svg-loader": "^5.1.3"
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^4.1.12",
+    "workbox-window": "^7.4.1"
   }
 }

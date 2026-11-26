@@ -1,20 +1,22 @@
 package com.riftlog.repository;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.riftlog.entity.Match;
 
-public interface MatchRepository extends JpaRepository<Match, Long> {
-    List<Match> findByOwnerId(Long ownerId);
+public interface MatchRepository extends JpaRepository<Match, UUID> {
 
-    List<Match> findByOwnerIdAndOpponentId(Long ownerId, Long opponentId);
+    List<Match> findAllByOrderByPlayedAtDesc();
 
-    List<Match> findByOwnerIdAndMyDeckId(Long ownerId, Long deckId);
-
-    Optional<Match> findByIdAndOwnerId(Long id, Long ownerId);
-
-    boolean existsByMyDeckIdOrOpponentDeckId(Long myDeckId, Long opponentDeckId);
+    @Query("""
+            select m from Match m
+            where exists (select 1 from MatchPlayer p where p.match = m and p.user.id = :userId)
+            order by m.playedAt desc
+            """)
+    List<Match> findByParticipant(@Param("userId") Long userId);
 }

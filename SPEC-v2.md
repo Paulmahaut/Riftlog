@@ -42,12 +42,10 @@ Toutes se calculent à partir des `score_events` et des infos de game. Aucun sco
 
 - API REST gratuite, sans clé : `https://api.riftcodex.com/cards?page=N&size=100`.
 - Projet de fans non officiel, qui fonctionne sous la politique de contenu de fans de Riot.
-- État au 2026-11-26 : 1 451 cartes, 8 sets. Par type :
-  - 180 `Legend`, soit 90 légendes distinctes une fois les variantes Signature et Overnumbered retirées ;
-  - 71 `Battlefield`, soit 64 distincts.
+- État au 2026-11-26 : 1 451 impressions, 8 sets. Après import et nettoyage : **49 légendes** et **64 battlefields** distincts. Le chiffre de 90 légendes donné plus tôt était faux : il comptait des variantes.
 - Les champs utiles :
-  - `riftbound_id` (ex. `ogn-001-298`), qui sert de clé externe ;
-  - `name` ;
+  - `id`, l'identifiant interne de Riftcodex, qui sert de clé externe. Le `riftbound_id` (ex. `ogn-001-298`) n'est **pas unique** : les versions « (Metal) » partagent celui de la carte de base, et certaines cartes sont listées deux fois ;
+  - `name` et `tags`. Les légendes du set VEN n'ont pas le champion dans leur nom (« Defender of Tomorrow ») : l'import le reprend dans les `tags`, ce qui donne « Jayce - Defender of Tomorrow ». « Yordle, Kennen - … » devient « Kennen - … » ;
   - `classification.type` et `classification.domain` ;
   - `set.set_id` ;
   - `media.image_url` ;
@@ -114,14 +112,52 @@ Les tables `match_players` et `game_players` remplacent les colonnes « moi / ad
 
 ## 7. Étapes
 
-0. **Préparation** ✅ : la version scolaire est déjà taguée `alpha`. Branche git `v2` et branche Neon `v2` créées le 2026-11-26. La base Neon de prod ne contient que des données de test.
-1. **Backend** : migration V3, import Riftcodex, endpoints v2 (envoi idempotent des matchs, decks, cartes, stats).
-2. **Socle frontend** : nouvelle DA, connexion et inscription, PWA, stockage local (IndexedDB).
+0. **Préparation** ✅ : la version scolaire est déjà taguée `alpha`. Branche git `Post-Uni` et branche Neon `v2` créées le 2026-11-26. La base Neon de prod ne contient que des données de test.
+1. **Backend** ✅ (2026-11-26, hors stats) :
+   - migrations V3 (schéma v2) et V4 (cartes identifiées par l'id Riftcodex) ;
+   - import Riftcodex au premier démarrage, puis via `POST /api/cards/import` ;
+   - endpoints v2 : envoi idempotent des matchs, decks, cartes, joueurs et invités (liste dans le README) ;
+   - 40 tests, plus une vérification de bout en bout sur la branche Neon `v2` (PostgreSQL).
+   - Les **stats** passent à l'étape 4, avec l'écran PC qui les affiche.
+2. **Socle frontend** ✅ (2026-11-26) :
+   - connexion et inscription ;
+   - navigation mobile (barre du bas) et PC (barre latérale) ;
+   - thèmes « table » et « lecture » ;
+   - PWA installable qui s'ouvre hors-ligne ;
+   - cache IndexedDB des légendes, battlefields et joueurs ;
+   - file d'envoi des matchs, testée et vérifiée de bout en bout : match en attente hors-ligne, puis envoi automatique au retour du réseau.
+
+   Le token JWT passe de 24 h à 30 jours. Détails dans `FRONTEND.md`.
 3. **Duel mobile** et écran d'après-partie.
 4. **Historique et stats** sur PC.
 5. **Deck builder**.
 6. **Saisie manuelle** pour les tournois en ligne.
 7. *Plus tard* : import Riftatlas (vérifier d'abord l'API et les conditions d'utilisation), 2v2.
+
+## 7 bis. Règles de branche (en vue du merge `Post-Uni` → `main`)
+
+La branche git `Post-Uni` sera fusionnée dans `main` en **gardant tous ses commits** (pas de squash). Pour que ça se passe sans problème :
+
+**Git**
+1. **On ne commite plus sur `main`** d'ici le merge. La fusion reste alors un fast-forward, sans conflit. Les branches `backend` et `launch` ne sont plus utilisées non plus.
+2. **On pousse `Post-Uni` souvent.** Ça ne déclenche aucun déploiement.
+3. **Des messages de commit clairs**, puisque tout l'historique sera conservé dans `main`.
+4. Juste avant le merge, on vérifie que `main` n'a pas bougé : `git log Post-Uni..main` doit être vide. Si ce n'est pas le cas, on fait `git merge main` dans `Post-Uni` d'abord et on règle les conflits là.
+
+**Base de données (Flyway)**
+
+5. **On ne modifie jamais `V1__init_schema.sql` ni `V2__insertions.sql`.** La prod les a déjà appliqués et Flyway refuserait de démarrer.
+6. Tout changement de schéma passe par un **nouveau fichier** : `V3__...`, `V4__...` Le V3 supprime les anciennes tables (données de test uniquement) et crée le schéma v2.
+7. Chaque migration est d'abord testée sur la **branche Neon `v2`**, jamais directement sur la prod.
+
+**Déploiement**
+
+8. Render redéploie à chaque push sur `main` : **merger, c'est mettre en prod**, et la V3 s'applique automatiquement à la base de prod.
+9. Avant le merge, il faut :
+   - vérifier que la prod ne contient toujours rien d'important ;
+   - mettre à jour les variables Render si besoin (`CORS_ALLOWED_ORIGINS` pour l'URL du nouveau frontend) ;
+   - relire [DEPLOY.md](DEPLOY.md).
+10. Après le merge, on vérifie que l'API répond. La branche Neon `v2` peut alors être supprimée.
 
 ## 8. Questions ouvertes
 

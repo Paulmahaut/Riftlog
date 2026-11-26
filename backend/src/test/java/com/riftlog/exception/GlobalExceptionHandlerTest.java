@@ -39,7 +39,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handlesInvalidMatchAs400() {
-        ResponseEntity<ApiError> response = handler.handleInvalidMatch(
+        ResponseEntity<ApiError> response = handler.handleBadRequest(
                 new InvalidMatchException("Match must end with one side reaching 8 points"), requestTo("/api/matches"));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());

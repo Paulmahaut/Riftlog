@@ -1,146 +1,162 @@
 package com.riftlog.service;
 
+import static com.riftlog.support.TestData.guestSeat;
+import static com.riftlog.support.TestData.liveGame;
+import static com.riftlog.support.TestData.match;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.riftlog.dto.DeckRequest;
+import com.riftlog.dto.DeckRequest.DeckCardRequest;
 import com.riftlog.dto.DeckResponse;
-import com.riftlog.entity.Deck;
-import com.riftlog.entity.Legend;
+import com.riftlog.dto.MatchRequest.PlayerSlot;
+import com.riftlog.dto.MatchResponse;
+import com.riftlog.dto.Saved;
+import com.riftlog.entity.Card;
+import com.riftlog.entity.DeckZone;
+import com.riftlog.entity.GameResult;
+import com.riftlog.entity.MatchFormat;
 import com.riftlog.entity.User;
-import com.riftlog.exception.DeckInUseException;
-import com.riftlog.exception.NotFoundException;
-import com.riftlog.repository.DeckRepository;
-import com.riftlog.repository.MatchRepository;
-import com.riftlog.repository.UserRepository;
+import com.riftlog.exception.BadRequestException;
+import com.riftlog.exception.ForbiddenException;
+import com.riftlog.exception.InvalidMatchException;
+import com.riftlog.support.TestData;
 
-@ExtendWith(MockitoExtension.class)
+import jakarta.persistence.EntityManager;
+
+@SpringBootTest
+@Transactional
 class DeckServiceTest {
 
-    @Mock
-    private DeckRepository deckRepository;
-    @Mock
-    private LegendService legendService;
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private MatchRepository matchRepository;
-
-    @InjectMocks
+    @Autowired
     private DeckService deckService;
+    @Autowired
+    private MatchService matchService;
+    @Autowired
+    private EntityManager entityManager;
+    @Autowired
+    private TestData data;
 
-    private User owner;
+    private User paul;
+    private User alex;
+    private Card vi;
+    private Card leblanc;
+    private Card unit;
 
     @BeforeEach
     void setUp() {
-        owner = new User();
-        owner.setId(1L);
-        owner.setEmail("paul@example.com");
-        owner.setDisplayName("Paul");
+        paul = data.user("Paul");
+        alex = data.user("Alex");
+        vi = data.card("test-101", "Vi - Piltover Enforcer", Card.TYPE_LEGEND);
+        leblanc = data.card("test-102", "LeBlanc - Deceiver", Card.TYPE_LEGEND);
+        unit = data.card("test-103", "Blazing Scorcher", "UNIT");
+    }
+
+    private void flushAndClear() {
+        entityManager.flush();
+        entityManager.clear();
     }
 
     @Test
-    void findOrCreate_returnsExistingDeckWithoutSaving() {
-        Legend legend = new Legend();
-        legend.setId(1L);
-        legend.setName("Ashe");
-        Deck existing = new Deck();
-        existing.setId(1L);
-        existing.setName("Ashe Aggro");
-        existing.setLegend(legend);
-        existing.setOwner(owner);
-        when(deckRepository.findByNameIgnoreCaseAndLegendIdAndOwnerId("Ashe Aggro", 1L, 1L)).thenReturn(Optional.of(existing));
+    void createsADeckAndAddsUpDuplicateLines() {
+        UUID id = UUID.randomUUID();
+        DeckRequest request = new DeckRequest("Vi aggro", vi.getId(), null, List.of(
+                new DeckCardRequest(unit.getId(), DeckZone.MAIN, 2),
+                new DeckCardRequest(unit.getId(), DeckZone.MAIN, 1),
+                new DeckCardRequest(unit.getId(), DeckZone.SIDE, 1)));
 
-        Deck result = deckService.findOrCreate("Ashe Aggro", legend, owner);
+        Saved<DeckResponse> saved = deckService.upsert(id, request, paul.getId());
+        flushAndClear();
+        DeckResponse deck = deckService.get(id);
 
-        assertEquals(existing, result);
-        verify(deckRepository, never()).save(any());
+        assertTrue(saved.created());
+        assertEquals("Vi - Piltover Enforcer", deck.legend().name());
+        assertEquals(2, deck.cards().size());
+        assertEquals(3, deck.cards().stream().filter(c -> c.zone() == DeckZone.MAIN).findFirst().orElseThrow().quantity());
     }
 
     @Test
-    void findOrCreate_createsNewDeckAttachedToLegendAndOwner() {
-        Legend legend = new Legend();
-        legend.setId(2L);
-        legend.setName("Viktor");
-        when(deckRepository.findByNameIgnoreCaseAndLegendIdAndOwnerId("Viktor Control", 2L, 1L)).thenReturn(Optional.empty());
-        when(deckRepository.save(any(Deck.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    void updatingReplacesTheCardList() {
+        UUID id = UUID.randomUUID();
+        deckService.upsert(id, new DeckRequest("Vi aggro", vi.getId(), null,
+                List.of(new DeckCardRequest(unit.getId(), DeckZone.MAIN, 3))), paul.getId());
+        flushAndClear();
 
-        Deck result = deckService.findOrCreate("Viktor Control", legend, owner);
+        deckService.upsert(id, new DeckRequest("Vi aggro v2", vi.getId(), "Less greedy",
+                List.of(new DeckCardRequest(unit.getId(), DeckZone.MAIN, 2))), paul.getId());
+        flushAndClear();
+        DeckResponse deck = deckService.get(id);
 
-        assertEquals("Viktor Control", result.getName());
-        assertEquals(legend, result.getLegend());
-        assertEquals(owner, result.getOwner());
+        assertEquals("Vi aggro v2", deck.name());
+        assertEquals(1, deck.cards().size());
+        assertEquals(2, deck.cards().get(0).quantity());
     }
 
     @Test
-    void create_resolvesOwnerAndLegendBeforeFindingOrCreatingDeck() {
-        Legend legend = new Legend();
-        legend.setId(3L);
-        legend.setName("Zoe");
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
-        when(legendService.findOrCreateByName("Zoe")).thenReturn(legend);
-        when(deckRepository.findByNameIgnoreCaseAndLegendIdAndOwnerId("Zoe Tempo", 3L, 1L)).thenReturn(Optional.empty());
-        when(deckRepository.save(any(Deck.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    void onlyTheOwnerCanChangeOrDeleteADeck() {
+        UUID id = UUID.randomUUID();
+        DeckRequest request = new DeckRequest("Vi aggro", vi.getId(), null, null);
+        deckService.upsert(id, request, paul.getId());
+        flushAndClear();
 
-        DeckResponse response = deckService.create(new DeckRequest("Zoe Tempo", "Zoe"), 1L);
-
-        assertEquals("Zoe Tempo", response.name());
-        assertEquals("Zoe", response.legendName());
-        verify(legendService).findOrCreateByName("Zoe");
+        assertThrows(ForbiddenException.class, () -> deckService.upsert(id, request, alex.getId()));
+        assertThrows(ForbiddenException.class, () -> deckService.delete(id, alex.getId()));
     }
 
     @Test
-    void delete_removesDeckWhenNotUsedInAnyMatch() {
-        Legend legend = new Legend();
-        legend.setId(1L);
-        legend.setName("Ashe");
-        Deck deck = new Deck();
-        deck.setId(5L);
-        deck.setName("Ashe Aggro");
-        deck.setLegend(legend);
-        deck.setOwner(owner);
-        when(deckRepository.findByIdAndOwnerId(5L, 1L)).thenReturn(Optional.of(deck));
-        when(matchRepository.existsByMyDeckIdOrOpponentDeckId(5L, 5L)).thenReturn(false);
+    void theLegendMustBeALegendCard() {
+        DeckRequest request = new DeckRequest("Broken", unit.getId(), null, null);
 
-        deckService.delete(5L, 1L);
-
-        verify(deckRepository).delete(deck);
+        assertThrows(BadRequestException.class, () -> deckService.upsert(UUID.randomUUID(), request, paul.getId()));
     }
 
     @Test
-    void delete_throwsWhenDeckUsedInMatchHistory() {
-        Legend legend = new Legend();
-        legend.setId(1L);
-        legend.setName("Ashe");
-        Deck deck = new Deck();
-        deck.setId(5L);
-        deck.setName("Ashe Aggro");
-        deck.setLegend(legend);
-        deck.setOwner(owner);
-        when(deckRepository.findByIdAndOwnerId(5L, 1L)).thenReturn(Optional.of(deck));
-        when(matchRepository.existsByMyDeckIdOrOpponentDeckId(5L, 5L)).thenReturn(true);
+    void deletingADeckKeepsItsMatches() {
+        UUID deckId = UUID.randomUUID();
+        deckService.upsert(deckId, new DeckRequest("Vi aggro", vi.getId(), null, null), paul.getId());
+        UUID matchId = UUID.randomUUID();
+        List<PlayerSlot> players = List.of(new PlayerSlot(1, paul.getId(), null, null, deckId, null),
+                guestSeat(2, "Thomas", leblanc));
+        matchService.upsert(matchId, match(MatchFormat.BO1, players, liveGame(1, 1, GameResult.SEAT1, 8, 3)),
+                paul.getId());
+        flushAndClear();
 
-        assertThrows(DeckInUseException.class, () -> deckService.delete(5L, 1L));
-        verify(deckRepository, never()).delete(any());
+        deckService.delete(deckId, paul.getId());
+        flushAndClear();
+        MatchResponse match = matchService.get(matchId);
+
+        assertNull(match.players().get(0).deckId());
+        assertEquals("Vi - Piltover Enforcer", match.players().get(0).legend().name());
     }
 
     @Test
-    void delete_throwsWhenDeckNotFoundForOwner() {
-        when(deckRepository.findByIdAndOwnerId(5L, 1L)).thenReturn(Optional.empty());
+    void aMatchCannotUseSomeoneElsesDeck() {
+        UUID alexDeck = UUID.randomUUID();
+        deckService.upsert(alexDeck, new DeckRequest("Alex's Vi", vi.getId(), null, null), alex.getId());
+        List<PlayerSlot> players = List.of(new PlayerSlot(1, paul.getId(), null, null, alexDeck, null),
+                guestSeat(2, "Thomas", leblanc));
 
-        assertThrows(NotFoundException.class, () -> deckService.delete(5L, 1L));
+        assertThrows(InvalidMatchException.class, () -> matchService.upsert(UUID.randomUUID(),
+                match(MatchFormat.BO1, players, liveGame(1, 1, GameResult.SEAT1, 8, 3)), paul.getId()));
+    }
+
+    @Test
+    void unknownDeckIsRejected() {
+        List<PlayerSlot> players = List.of(new PlayerSlot(1, paul.getId(), null, null, UUID.randomUUID(), null),
+                guestSeat(2, "Thomas", leblanc));
+
+        assertThrows(BadRequestException.class, () -> matchService.upsert(UUID.randomUUID(),
+                match(MatchFormat.BO1, players, liveGame(1, 1, GameResult.SEAT1, 8, 3)), paul.getId()));
     }
 }

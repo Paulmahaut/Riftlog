@@ -15,6 +15,7 @@ import com.riftlog.dto.RegisterRequest;
 import com.riftlog.dto.UserResponse;
 import com.riftlog.security.AuthenticatedUser;
 import com.riftlog.service.AuthService;
+import com.riftlog.service.UserService;
 
 import jakarta.validation.Valid;
 
@@ -23,9 +24,11 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserService userService) {
         this.authService = authService;
+        this.userService = userService;
     }
 
     @PostMapping("/register")
@@ -40,6 +43,6 @@ public class AuthController {
 
     @GetMapping("/me")
     public UserResponse me(@AuthenticationPrincipal AuthenticatedUser currentUser) {
-        return new UserResponse(currentUser.id(), currentUser.email(), currentUser.displayName());
+        return userService.me(currentUser.id());
     }
 }
