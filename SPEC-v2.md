@@ -112,7 +112,7 @@ Les tables `match_players` et `game_players` remplacent les colonnes « moi / ad
 
 ## 7. Étapes
 
-0. **Préparation** ✅ : la version scolaire est déjà taguée `alpha`. Branche git `Post-Uni` et branche Neon `v2` créées le 2026-11-26. La base Neon de prod ne contient que des données de test.
+0. **Préparation** ✅ : la version scolaire est déjà taguée `alpha`, et sa base sauvegardée dans la branche Neon `v1-backup`. Branche git `Post-Uni` et branche Neon `v2` créées le 2026-11-26. La base Neon de prod ne contient que des données de test.
 1. **Backend** ✅ (2026-11-26, hors stats) :
    - migrations V3 (schéma v2) et V4 (cartes identifiées par l'id Riftcodex) ;
    - import Riftcodex au premier démarrage, puis via `POST /api/cards/import` ;
@@ -145,35 +145,52 @@ Les tables `match_players` et `game_players` remplacent les colonnes « moi / ad
 6. **Saisie manuelle** pour les tournois en ligne.
 7. *Plus tard* : import Riftatlas (vérifier d'abord l'API et les conditions d'utilisation), 2v2.
 
-## 7 bis. Règles de branche (en vue du merge `Post-Uni` → `main`)
+## 7 bis. Branches et mise en prod
 
-La branche git `Post-Uni` sera fusionnée dans `main` en **gardant tous ses commits** (pas de squash). Pour que ça se passe sans problème :
+**Décision du 2026-11-26** : la v2 passe en prod sans préprod séparée. La prod ne contient que des données de test et n'a pas encore de vrais utilisateurs, donc elle sert de préprod. La version scolaire reste disponible : tag git `alpha` et branche Neon `v1-backup`.
 
-**Git**
-1. **On ne commite plus sur `main`** d'ici le merge. La fusion reste alors un fast-forward, sans conflit. Les branches `backend` et `launch` ne sont plus utilisées non plus.
-2. **On pousse `Post-Uni` souvent.** Ça ne déclenche aucun déploiement.
-3. **Des messages de commit clairs**, puisque tout l'historique sera conservé dans `main`.
-4. Juste avant le merge, on vérifie que `main` n'a pas bougé : `git log Post-Uni..main` doit être vide. Si ce n'est pas le cas, on fait `git merge main` dans `Post-Uni` d'abord et on règle les conflits là.
+**Le merge `Post-Uni` → `main`**
+
+1. Le merge garde **tous les commits** (fast-forward, pas de squash). Vérifié le 2026-11-26 : `git log Post-Uni..origin/main` est vide, aucun conflit possible.
+2. Avant : `Post-Uni` commitée et poussée, et le tag `alpha` sur GitHub (c'est le cas).
+3. Commandes, lancées par Paul :
+   ```bash
+   git checkout main
+   git merge --ff-only Post-Uni
+   git push origin main
+   ```
+4. Le push déclenche le redéploiement Render de `riftlog-backend` : **merger, c'est mettre en prod**. Au démarrage, Flyway applique V3 (suppression des tables v1, schéma v2) et V4 à la base `production`, puis les cartes sont importées depuis Riftcodex (1 à 2 minutes).
+5. Après : régler Render et créer le site, puis tout vérifier (checklist dans [DEPLOY.md](DEPLOY.md)).
+
+**En ligne depuis le 2026-11-26** : site https://riftlog.onrender.com, API https://riftlog-backend.onrender.com. Parcours complet vérifié (inscription, appli installable, match en ligne et hors-ligne, historique, stats).
+
+**Branches Neon** (renommées le 2026-11-26) : le serveur de prod avait été branché sur la branche `v2`, qui avait déjà le schéma v2 et les cartes. On l'a gardée comme base de prod plutôt que de migrer l'ancienne :
+
+| Branche Neon | id | Contenu |
+| --- | --- | --- |
+| `production` (par défaut) | `br-old-feather-za30tzqi` | **base de prod v2**, ex-`v2` (hôte `ep-plain-feather-…`) |
+| `v1-archive` | `br-broad-tooth-zawy9qy4` | ex-`production`, base v1 jamais migrée (hôte `ep-cold-rain-…`) |
+| `v1-backup` | `br-fragrant-flower-zakz1igo` | copie de `v1-archive`, sans compute |
 
 **Base de données (Flyway)**
 
-5. **On ne modifie jamais `V1__init_schema.sql` ni `V2__insertions.sql`.** La prod les a déjà appliqués et Flyway refuserait de démarrer.
-6. Tout changement de schéma passe par un **nouveau fichier** : `V3__...`, `V4__...` Le V3 supprime les anciennes tables (données de test uniquement) et crée le schéma v2.
-7. Chaque migration est d'abord testée sur la **branche Neon `v2`**, jamais directement sur la prod.
+6. **On ne modifie jamais un fichier de migration déjà appliqué** (`V1__…` à `V4__…`) : Flyway refuserait de démarrer.
+7. Tout changement de schéma passe par un **nouveau fichier** `V5__…`, `V6__…`, testé d'abord sur une nouvelle branche Neon créée depuis `production` (console Neon → Create branch), jamais directement sur `production`. Même règle pour le développement local : ne pas brancher son backend local sur `production`.
 
-**Déploiement**
+**Sauvegarde et retour arrière**
 
-0. Avant le merge, la v2 se teste en **préprod** : services Render construits depuis `Post-Uni`, branchés sur la branche Neon `v2` (voir `DEPLOY.md`). La prod ne bouge pas.
+8. La branche Neon **`v1-backup`** (`br-fragrant-flower-zakz1igo`) est une copie de la prod v1 prise juste avant le merge (schéma V1/V2, 3 comptes de test). Elle n'a pas de compute : en ajouter un depuis la console Neon pour la consulter.
+9. Retour arrière vers la v1 en cas de gros problème : redéployer sur Render le commit du tag `alpha` avec un `DB_URL` pointant sur `v1-archive`. Ne pas faire tourner le code v2 sur une base v1, ni l'inverse.
+10. `v1-archive` et `v1-backup` contiennent la même chose : on pourra supprimer l'une des deux plus tard.
 
-8. Render redéploie à chaque push sur `main` : **merger, c'est mettre en prod**, et la V3 s'applique automatiquement à la base de prod.
-9. Avant le merge, il faut :
-   - vérifier que la prod ne contient toujours rien d'important ;
-   - mettre à jour les variables Render si besoin (`CORS_ALLOWED_ORIGINS` pour l'URL du nouveau frontend) ;
-   - relire [DEPLOY.md](DEPLOY.md).
-10. Après le merge, on vérifie que l'API répond. La branche Neon `v2` peut alors être supprimée.
+**Ensuite**
+
+11. Tant que personne d'autre n'utilise l'appli, on peut travailler directement sur `main`.
+12. Dès que les amis enregistrent leurs parties, chaque push sur `main` touche leurs données : on reprend une branche de travail (`dev`) et on ne merge dans `main` que ce qui est testé.
 
 ## 8. Questions ouvertes
 
+- ~~Préprod séparée ou merge direct ?~~ Merge direct (voir §7 bis).
 - ~~La base Neon de prod contient-elle des données à garder ?~~ Non (vérifié le 2026-11-26) : seulement des données de test (Alice/Bob, légendes fictives Ada/Jiro/Kaya, 10 matchs). On repart d'un schéma propre.
 - DA PC « joli » : lien ou capture de Papertree.
 - ~~Option pour ne pas télécharger les données ?~~ Inutile : tout ce qui est gardé sur l'appareil pèse environ 330 Ko (appli, polices et icônes) plus 37 Ko de données de jeu (7 Ko compressés). Aucune image de carte n'est téléchargée.

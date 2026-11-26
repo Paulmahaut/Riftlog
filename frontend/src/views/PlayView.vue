@@ -1,13 +1,14 @@
 <script setup>
 // Starting a match: format, legends, opponent. Everything comes from the device cache,
 // so it works at the table without network. A match in progress can be resumed from here.
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AppIcon from "../components/AppIcon.vue";
 import { clearLiveMatch, currentGame, loadLiveMatch, newMatch, saveLiveMatch, score } from "../lib/duel.js";
 import { FORMAT_LABEL } from "../lib/format.js";
-import { cachedCards, cachedPlayers } from "../lib/reference.js";
+import { cachedCards, cachedPlayers, referenceState } from "../lib/reference.js";
 import { session } from "../lib/session.js";
+import { network, syncNow } from "../lib/sync.js";
 
 const LAST_SETUP_KEY = "riftlog.lastSetup";
 const NEW_GUEST = "new-guest";
@@ -31,6 +32,15 @@ const form = reactive({
 
 const friends = computed(() => players.value.filter((p) => p.kind === "user" && p.id !== session.user.id));
 const guests = computed(() => players.value.filter((p) => p.kind === "guest"));
+
+// First login: the legends are still downloading when this screen opens. Reload once they are in.
+watch(
+    () => referenceState.version,
+    async () => {
+        legends.value = await cachedCards("legend");
+        players.value = await cachedPlayers();
+    },
+);
 
 onMounted(async () => {
     const [cards, cachedList, match] = await Promise.all([
@@ -154,12 +164,19 @@ async function abandon() {
             </div>
         </section>
 
-        <div v-else-if="legends.length === 0" class="card grid gap-2 p-5">
+        <div v-else-if="legends.length === 0 && referenceState.loading" class="card grid gap-2 p-5" role="status">
+            <p class="font-semibold">Téléchargement des légendes…</p>
+            <p class="text-sm text-muted">Quelques secondes, une seule fois : ensuite le compteur marche sans réseau.</p>
+        </div>
+
+        <div v-else-if="legends.length === 0" class="card grid gap-3 p-5">
             <p class="font-semibold">Les légendes ne sont pas encore sur cet appareil.</p>
             <p class="text-sm text-muted">
-                Ouvre l'appli une fois avec du réseau : elles se téléchargent toutes seules, puis le compteur marche sans
-                réseau.
+                Il faut du réseau une seule fois pour les télécharger. Ensuite, le compteur marche sans réseau.
             </p>
+            <button v-if="network.online" class="btn w-fit" type="button" @click="syncNow({ forceReference: true })">
+                Télécharger maintenant
+            </button>
         </div>
 
         <form v-else class="card grid gap-5 p-5" @submit.prevent="start">

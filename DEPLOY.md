@@ -1,62 +1,90 @@
 # Deploying a shared instance
 
-## Préprod v2 (branche `Post-Uni`)
+## Mettre la v2 en prod (merge `Post-Uni` → `main`)
 
-Pour tester la v2 en ligne **sans toucher la prod** : un backend et un site Render construits depuis
-`Post-Uni`, branchés sur la branche Neon `v2`. `main`, la prod Render et la base `production` ne bougent pas.
-Render reconstruit la préprod à chaque push sur `Post-Uni`.
+Décision et retour arrière : voir `SPEC-v2.md` §7 bis.
 
-**Avant** : commiter et pousser `Post-Uni` (Render construit ce qui est sur GitHub, pas ce qui est en local).
+**Fait le 2026-11-26.** Site : https://riftlog.onrender.com · API : https://riftlog-backend.onrender.com.
+La base de prod est la branche Neon `production` (ex-`v2`, hôte `ep-plain-feather-…`). L'ancienne base v1 est
+`v1-archive` (hôte `ep-cold-rain-…`), sauvegardée aussi dans `v1-backup`. Le tableau des branches est dans la SPEC.
+La procédure ci-dessous reste la référence pour recréer un service.
 
-### 1. Backend de préprod (Render → New → Web Service)
+Il y a deux services Render :
 
-| Réglage | Valeur |
-| --- | --- |
-| Repo / branche | `Riftlog` / `Post-Uni` |
-| Name | `riftlog-backend-v2` |
-| Language | Docker |
-| Root Directory | `backend` |
-| Dockerfile Path | `./Dockerfile` |
-| Instance type | Free |
-| Health Check Path (Advanced) | `/validation.html` |
+- **`riftlog-backend`** (Web Service, existe déjà) : il se redéploie tout seul au push sur `main` ;
+- **le site** (Static Site, à créer) : le nouveau frontend Vue.
 
-Variables d'environnement :
+L'adresse `xxx.onrender.com` d'un service est fixée à sa création : copier toujours celle affichée en haut
+de sa page, pas son nom. La région d'un Web Service ne peut plus changer après création.
 
-| Clé | Valeur |
-| --- | --- |
-| `DB_URL` | `jdbc:postgresql://<host de la branche v2>/neondb?sslmode=require&channel_binding=require` |
-| `DB_USERNAME` / `DB_PASSWORD` | ceux de la branche Neon `v2` (Neon → Branches → `v2` → Connect) |
-| `JWT_SECRET` | une nouvelle chaîne aléatoire de 40+ caractères (bouton « Generate » de Render) |
-| `CORS_ALLOWED_ORIGINS` | l'URL du site de l'étape 2 (à remplir après l'avoir créé) |
+### 1. Avant le merge : vérifier `riftlog-backend`
 
-Vérifier : `https://riftlog-backend-v2.onrender.com/validation.html` répond (premier build : quelques minutes).
+| Où dans Render | Champ | Valeur attendue |
+| --- | --- | --- |
+| Settings | Branch | `main` |
+| Settings | Root Directory | `backend` |
+| Settings | Dockerfile Path | `./Dockerfile` |
+| Settings | Health Check Path | `/validation.html` |
+| Environment | `DB_URL` | branche Neon **`production`** : `jdbc:postgresql://ep-plain-feather-zae35cni-pooler.c-2.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require` |
+| Environment | `DB_USERNAME` / `DB_PASSWORD` | `neondb_owner` / mot de passe affiché dans Neon (branche `production` → Connect) |
+| Environment | `JWT_SECRET` | déjà défini (32 caractères ou plus), ne pas changer : sinon tout le monde est déconnecté |
+| Environment | `CORS_ALLOWED_ORIGINS` | sera mis à jour à l'étape 4 |
 
-### 2. Site de préprod (Render → New → Static Site)
+À ne pas définir : `PORT` (fourni par Render), `JWT_EXPIRATION_MS` (30 jours par défaut),
+`CARDS_IMPORT_ON_STARTUP` (vrai par défaut : la base de prod n'a pas encore les cartes v2).
 
-| Réglage | Valeur |
-| --- | --- |
-| Repo / branche | `Riftlog` / `Post-Uni` |
-| Name | `riftlog-v2` |
-| Root Directory | `frontend` |
-| Build Command | `npm ci && npm run build` |
-| Publish Directory | `dist` |
-| Variable `VITE_API_URL` | `https://riftlog-backend-v2.onrender.com` |
-| Variable `NODE_VERSION` | `22` |
+### 2. Le merge
 
-Puis **Redirects/Rewrites** : Source `/*`, Destination `/index.html`, Action **Rewrite**
-(sinon recharger `/stats` ou `/matches/…` donne une 404).
+```bash
+git checkout main
+git merge --ff-only Post-Uni
+git push origin main
+```
 
-Enfin, revenir au backend et mettre `CORS_ALLOWED_ORIGINS=https://riftlog-v2.onrender.com`.
+Dans les logs du déploiement Render (`riftlog-backend` → Logs), on doit voir :
 
-### 3. Vérifier
+- `Successfully applied 2 migrations … now at version v4` ;
+- `Card import done: 1451 fetched … 49 legends, 64 battlefields` (1 à 2 minutes après le démarrage).
 
-1. Ouvrir `https://riftlog-v2.onrender.com` sur le téléphone. Le premier appel peut prendre ~1 min (réveil du serveur gratuit).
-2. Se connecter avec un compte créé sur `v2`, ou en créer un.
-3. « Ajouter à l'écran d'accueil », puis couper le réseau et rouvrir l'appli : elle doit s'ouvrir.
-4. Jouer un match hors-ligne, remettre le réseau : le badge passe à « À jour », le match apparaît dans l'historique et les stats.
+### 3. Créer le site (Render → New → Static Site)
 
-Quand la v2 passera en prod (merge dans `main`), même recette sur le service `riftlog-backend` existant
-(base `production`, `CORS_ALLOWED_ORIGINS` du site de prod) et un site statique construit depuis `main`.
+| Où dans Render | Champ | Valeur | Erreur à éviter |
+| --- | --- | --- | --- |
+| Source | Branch | **`main`** | — |
+| Général | Root Directory | **`frontend`** | vide : `npm` ne trouve pas `package.json` |
+| Général | Build Command | **`npm ci && npm run build`** | — |
+| Général | Publish Directory | **`dist`** (préfixe `frontend/` affiché) | `build` ou `public` : page blanche |
+| Environment | `VITE_API_URL` | `https://<adresse-du-backend>.onrender.com` | slash final : les appels deviennent `//api/…` et sont refusés |
+| Environment | `NODE_VERSION` | `22` | trop ancien : le build échoue (Vite 8) |
+| Redirects/Rewrites | Règle | Source `/*`, Destination `/index.html`, Action **Rewrite** | absente : recharger `/stats` donne une 404 |
+
+`VITE_API_URL` est lue au moment du build : si on la change, il faut redéployer le site.
+
+### 4. Autoriser le site côté backend
+
+`riftlog-backend` → Environment → `CORS_ALLOWED_ORIGINS` = `https://<adresse-du-site>.onrender.com`
+(en `https`, **sans slash final**, sans chemin), puis **Save, rebuild and deploy**.
+On peut ajouter `,http://localhost:5173` pour développer en local contre la prod.
+
+### 5. Vérifier
+
+1. `https://<adresse-du-backend>/validation.html` répond.
+2. Sur le site : créer un compte. Le badge passe à « À jour » et l'écran Jouer propose les légendes.
+3. Recharger une page comme `/stats` : pas de 404.
+4. Sur le téléphone : « Ajouter à l'écran d'accueil », mode avion, rouvrir l'appli : elle s'ouvre.
+5. Jouer un match hors-ligne, remettre le réseau : le match part et apparaît dans l'historique et les stats.
+
+Le premier appel après 15 minutes d'inactivité prend environ 1 minute : le serveur gratuit se réveille.
+
+### 6. Ensuite
+
+- Supprimer les éventuels services de préprod créés avant cette décision.
+- Garder `v1-archive` et `v1-backup` (même contenu : l'une des deux pourra être supprimée).
+
+---
+
+*La suite de ce fichier décrit la mise en place initiale (v1) et reste valable pour Neon et Render.*
+
 
 For a dozen people to hit the same data, one backend + one database need to run
 somewhere everyone can reach — not on your laptop. This uses two free

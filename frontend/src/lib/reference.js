@@ -1,11 +1,24 @@
 // Reference data cached on the device: legends, battlefields, players and guests.
 // Refreshed when online; read from IndexedDB at the table.
+import { reactive } from "vue";
 import { api } from "./api.js";
 import { db } from "./db.js";
+
+/** `version` goes up after each refresh, so screens can reload what they read from the cache. */
+export const referenceState = reactive({ loading: false, version: 0 });
 
 const CACHED_CARD_TYPES = ["legend", "battlefield"];
 
 export async function refreshReferenceData() {
+    referenceState.loading = true;
+    try {
+        return await downloadReferenceData();
+    } finally {
+        referenceState.loading = false;
+    }
+}
+
+async function downloadReferenceData() {
     const [legends, battlefields, users, guests] = await Promise.all([
         api("/api/cards?type=legend"),
         api("/api/cards?type=battlefield"),
@@ -35,6 +48,7 @@ export async function refreshReferenceData() {
     };
     await tx.objectStore("meta").put(status);
     await tx.done;
+    referenceState.version++;
     return status;
 }
 

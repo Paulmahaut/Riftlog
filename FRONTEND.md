@@ -23,6 +23,7 @@ affichée par Vite. Le backend doit autoriser cette adresse dans `CORS_ALLOWED_O
 `CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173`.
 
 En production, le build a besoin de l'URL de l'API : `VITE_API_URL=https://riftlog-backend.onrender.com`.
+Le site est en ligne sur https://riftlog.onrender.com (Render Static Site, branche `main`, voir `DEPLOY.md`).
 
 ## Stack
 
