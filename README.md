@@ -294,7 +294,7 @@ curl http://localhost:8080/api/matches \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
-Matches are private. Only matches belonging to the authenticated user are returned.
+Every registered player sees the whole group's matches. Add `?userId=` to keep only one player's matches.
 
 ### Get statistics
 
@@ -348,6 +348,7 @@ DB_PASSWORD=
 | `GET`    | `/api/matches/{id}`       | One match with its games and every point in order |
 | `PUT`    | `/api/matches/{id}`       | Upload a finished match (201 the first time, 200 when re-sent) |
 | `DELETE` | `/api/matches/{id}`       | Delete a match (its recorder or players only) |
+| `GET`    | `/api/stats`              | A player's stats (`?userId=`, default: you): win rates by legend and turn order, point split, battlefields, comebacks |
 
 Every endpoint except register and login needs `Authorization: Bearer <token>`.
 

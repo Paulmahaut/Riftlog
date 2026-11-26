@@ -32,6 +32,13 @@
     --danger: #e5603b;
     --success: #4fb286;
     --warning: #d6a332;
+    /* Chart marks: checked with the dataviz validator against this theme's surface
+       (lightness band, colorblind separation, contrast). UI accents stay as above. */
+    --chart-me: #6aa0e8;
+    --chart-opp: #dd8550;
+    --chart-conquer: #e5603b;
+    --chart-hold: #2fa39a;
+    --chart-ability: #c4952b;
 }
 
 [data-theme="lecture"] {
@@ -49,6 +56,11 @@
     --danger: #c23b1a;
     --success: #1f7a52;
     --warning: #9a6b00;
+    --chart-me: #2457a6;
+    --chart-opp: #b4541f;
+    --chart-conquer: #d4542f;
+    --chart-hold: #0f8f84;
+    --chart-ability: #a87b14;
 }
 
 /* Score types keep the same colors in every theme: players learn them at the table. */
@@ -75,6 +87,11 @@
     --color-conquer: var(--conquer);
     --color-hold: var(--hold);
     --color-ability: var(--ability);
+    --color-chart-me: var(--chart-me);
+    --color-chart-opp: var(--chart-opp);
+    --color-chart-conquer: var(--chart-conquer);
+    --color-chart-hold: var(--chart-hold);
+    --color-chart-ability: var(--chart-ability);
 
     --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;

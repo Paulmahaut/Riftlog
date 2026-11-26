@@ -18,6 +18,7 @@ const PATHS = {
     refresh: "M21 12a9 9 0 11-2.6-6.4M21 4v5h-5",
     trash: "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3",
     conquer: "M6 21V4h11l-2 4 2 4H6",
+    stats: "M4 20h16M7 16v-5M12 16V6M17 16v-8",
 };
 </script>
 

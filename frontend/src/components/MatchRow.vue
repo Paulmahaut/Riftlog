@@ -18,7 +18,10 @@ const OUTCOME_TONE = {
 </script>
 
 <template>
-    <article class="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3">
+    <RouterLink
+        :to="{ name: 'match', params: { id: match.id } }"
+        class="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3 transition-colors hover:bg-surface-2"
+    >
         <div class="min-w-0">
             <p class="truncate text-sm">
                 <span class="font-semibold" :class="match.winnerSeat === 1 ? 'text-fg' : 'text-muted'">{{ seat(1)?.name }}</span>
@@ -41,5 +44,5 @@ const OUTCOME_TONE = {
             {{ formatDateTime(match.playedAt) }} · {{ FORMAT_LABEL[match.format] }}
             <template v-if="match.source !== 'LIVE'"> · saisi à la main</template>
         </p>
-    </article>
+    </RouterLink>
 </template>

@@ -1,6 +1,6 @@
 <script setup>
 // Loads and lists matches from the server, with loading, offline and empty states.
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import MatchRow from "./MatchRow.vue";
 import { api, describeError, NetworkError } from "../lib/api.js";
 import { network } from "../lib/sync.js";
@@ -10,7 +10,11 @@ const props = defineProps({
     userId: { type: Number, default: null },
     limit: { type: Number, default: 0 },
     emptyText: { type: String, default: "Aucun match pour l'instant." },
+    /** Optional (match) => boolean, applied after loading. */
+    filter: { type: Function, default: null },
+    filteredEmptyText: { type: String, default: "Aucun match ne correspond à ces filtres." },
 });
+const emit = defineEmits(["loaded"]);
 
 const matches = ref([]);
 const loading = ref(true);
@@ -24,6 +28,7 @@ async function load() {
     try {
         const all = await api(props.userId == null ? "/api/matches" : `/api/matches?userId=${props.userId}`);
         matches.value = props.limit ? all.slice(0, props.limit) : all;
+        emit("loaded", matches.value);
     } catch (e) {
         offline.value = e instanceof NetworkError && !network.online;
         error.value = describeError(e);
@@ -40,6 +45,8 @@ watch(
     (online) => online && (error.value || offline.value) && load(),
 );
 defineExpose({ reload: load });
+
+const shown = computed(() => (props.filter ? matches.value.filter(props.filter) : matches.value));
 </script>
 
 <template>
@@ -53,8 +60,9 @@ defineExpose({ reload: load });
             <button class="btn" type="button" @click="load">Réessayer</button>
         </div>
         <p v-else-if="matches.length === 0" class="px-4 py-6 text-sm text-muted">{{ emptyText }}</p>
+        <p v-else-if="shown.length === 0" class="px-4 py-6 text-sm text-muted">{{ filteredEmptyText }}</p>
         <ul v-else class="divide-y divide-line">
-            <li v-for="match in matches" :key="match.id">
+            <li v-for="match in shown" :key="match.id">
                 <MatchRow :match="match" />
             </li>
         </ul>

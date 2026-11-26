@@ -45,12 +45,12 @@ const paths = computed(() =>
             <text :x="W - R" :y="H - 4" text-anchor="end" font-size="11" fill="var(--muted)">
                 {{ events.length }} point{{ events.length > 1 ? "s" : "" }} marqué{{ events.length > 1 ? "s" : "" }}
             </text>
-            <path :d="paths[1]" fill="none" stroke="var(--seat-opp)" stroke-width="2.5" stroke-linejoin="round" />
-            <path :d="paths[0]" fill="none" stroke="var(--seat-me)" stroke-width="2.5" stroke-linejoin="round" />
+            <path :d="paths[1]" fill="none" stroke="var(--chart-opp)" stroke-width="2" stroke-linejoin="round" />
+            <path :d="paths[0]" fill="none" stroke="var(--chart-me)" stroke-width="2" stroke-linejoin="round" />
         </svg>
         <figcaption class="flex gap-4 text-xs text-muted">
-            <span class="flex items-center gap-1.5"><i class="inline-block h-[3px] w-2.5 rounded bg-seat-me" />{{ names[0] }}</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-[3px] w-2.5 rounded bg-seat-opp" />{{ names[1] }}</span>
+            <span class="flex items-center gap-1.5"><i class="inline-block h-[3px] w-2.5 rounded bg-chart-me" />{{ names[0] }}</span>
+            <span class="flex items-center gap-1.5"><i class="inline-block h-[3px] w-2.5 rounded bg-chart-opp" />{{ names[1] }}</span>
         </figcaption>
     </figure>
 </template>

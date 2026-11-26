@@ -1,5 +1,63 @@
 # Deploying a shared instance
 
+## Préprod v2 (branche `Post-Uni`)
+
+Pour tester la v2 en ligne **sans toucher la prod** : un backend et un site Render construits depuis
+`Post-Uni`, branchés sur la branche Neon `v2`. `main`, la prod Render et la base `production` ne bougent pas.
+Render reconstruit la préprod à chaque push sur `Post-Uni`.
+
+**Avant** : commiter et pousser `Post-Uni` (Render construit ce qui est sur GitHub, pas ce qui est en local).
+
+### 1. Backend de préprod (Render → New → Web Service)
+
+| Réglage | Valeur |
+| --- | --- |
+| Repo / branche | `Riftlog` / `Post-Uni` |
+| Name | `riftlog-backend-v2` |
+| Language | Docker |
+| Root Directory | `backend` |
+| Dockerfile Path | `./Dockerfile` |
+| Instance type | Free |
+| Health Check Path (Advanced) | `/validation.html` |
+
+Variables d'environnement :
+
+| Clé | Valeur |
+| --- | --- |
+| `DB_URL` | `jdbc:postgresql://<host de la branche v2>/neondb?sslmode=require&channel_binding=require` |
+| `DB_USERNAME` / `DB_PASSWORD` | ceux de la branche Neon `v2` (Neon → Branches → `v2` → Connect) |
+| `JWT_SECRET` | une nouvelle chaîne aléatoire de 40+ caractères (bouton « Generate » de Render) |
+| `CORS_ALLOWED_ORIGINS` | l'URL du site de l'étape 2 (à remplir après l'avoir créé) |
+
+Vérifier : `https://riftlog-backend-v2.onrender.com/validation.html` répond (premier build : quelques minutes).
+
+### 2. Site de préprod (Render → New → Static Site)
+
+| Réglage | Valeur |
+| --- | --- |
+| Repo / branche | `Riftlog` / `Post-Uni` |
+| Name | `riftlog-v2` |
+| Root Directory | `frontend` |
+| Build Command | `npm ci && npm run build` |
+| Publish Directory | `dist` |
+| Variable `VITE_API_URL` | `https://riftlog-backend-v2.onrender.com` |
+| Variable `NODE_VERSION` | `22` |
+
+Puis **Redirects/Rewrites** : Source `/*`, Destination `/index.html`, Action **Rewrite**
+(sinon recharger `/stats` ou `/matches/…` donne une 404).
+
+Enfin, revenir au backend et mettre `CORS_ALLOWED_ORIGINS=https://riftlog-v2.onrender.com`.
+
+### 3. Vérifier
+
+1. Ouvrir `https://riftlog-v2.onrender.com` sur le téléphone. Le premier appel peut prendre ~1 min (réveil du serveur gratuit).
+2. Se connecter avec un compte créé sur `v2`, ou en créer un.
+3. « Ajouter à l'écran d'accueil », puis couper le réseau et rouvrir l'appli : elle doit s'ouvrir.
+4. Jouer un match hors-ligne, remettre le réseau : le badge passe à « À jour », le match apparaît dans l'historique et les stats.
+
+Quand la v2 passera en prod (merge dans `main`), même recette sur le service `riftlog-backend` existant
+(base `production`, `CORS_ALLOWED_ORIGINS` du site de prod) et un site statique construit depuis `main`.
+
 For a dozen people to hit the same data, one backend + one database need to run
 somewhere everyone can reach — not on your laptop. This uses two free
 services, no credit card required for either:

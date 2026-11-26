@@ -104,6 +104,23 @@ public class TestData {
                 result, reason, List.of(), List.of(), events);
     }
 
+    /**
+     * A live game whose points follow {@code seats} exactly, e.g. "2222211111111" (seat 2 leads 0-5,
+     * then seat 1 scores 8 in a row). Point types cycle Conquer, Hold, Ability.
+     */
+    public static GameData scriptedGame(int number, int firstSeat, GameResult result, String seats) {
+        Instant start = T0.plusSeconds(3600L * number);
+        List<EventData> events = new ArrayList<>();
+        ScoreType[] types = ScoreType.values();
+        for (int i = 0; i < seats.length(); i++) {
+            events.add(new EventData(UUID.randomUUID(), i + 1, seats.charAt(i) - '0', types[i % types.length],
+                    start.plusSeconds(30L * (i + 1))));
+        }
+        GameEndReason reason = result == GameResult.DRAW ? GameEndReason.DRAW : GameEndReason.POINTS;
+        return new GameData(UUID.randomUUID(), number, firstSeat, start, start.plusSeconds(30L * (seats.length() + 1)),
+                result, reason, List.of(), List.of(), events);
+    }
+
     /** Same game with post-game details added for one seat. */
     public static GameData withDetails(GameData game, GamePlayerData... details) {
         return new GameData(game.id(), game.number(), game.firstSeat(), game.startedAt(), game.endedAt(),

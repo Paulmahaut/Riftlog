@@ -51,6 +51,7 @@ src/
 │   ├── reference.js     cache des légendes, battlefields, joueurs et invités
 │   ├── outbox.js        file des matchs à envoyer (+ outbox.test.js)
 │   ├── duel.js          règles du compteur (points, games, Bo3) et match en cours (+ duel.test.js)
+│   ├── matches.js       matchs lus depuis l'API : modification, winrate (+ matches.test.js)
 │   ├── sync.js          envoi et rafraîchissement automatiques quand le réseau est là
 │   ├── theme.js         thèmes « table » et « lecture »
 │   └── format.js        dates, résultats, libellés
@@ -63,6 +64,8 @@ src/
 **Couleurs** : jamais de couleur en dur dans un composant. On utilise les tokens
 (`bg-surface`, `text-muted`, `border-line`, `text-conquer`…) définis dans `styles/main.css`.
 Un nouveau thème, c'est juste un nouveau bloc `[data-theme="..."]`.
+Les graphiques utilisent leurs propres tokens (`--chart-me`, `--chart-opp`, `--chart-conquer`…), vérifiés
+pour chaque thème (daltonisme, contraste sur le fond) : un nouveau thème doit aussi les redéfinir.
 
 **Backend** : toujours passer par `api()` de `lib/api.js`, jamais `fetch` directement.
 Il ajoute le token, et transforme les erreurs en `ApiError` (le serveur a répondu une erreur)
@@ -89,4 +92,6 @@ et un bandeau demande de se reconnecter pour envoyer les matchs.
   file d'envoi. ✅
 - Étape 3 : lancement d'un match (`PlayView`), duel plein écran (`DuelView`, `DuelHalf`), fin de game
   et de match. ✅
-- Étape 4 : détail d'un match et statistiques. Étape 5 : deck builder.
+- Étape 4 : historique filtrable, détail d'un match (`MatchDetailView`, `PointTimeline`, `ScoreChart`),
+  page Stats (`StatsView`, `WinBar`, `PointSplitBar`). ✅
+- Étape 5 : deck builder.

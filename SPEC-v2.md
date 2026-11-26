@@ -36,7 +36,7 @@ Les deux sont **une seule appli Vue** (PWA installable) avec des écrans adapté
 3. Battlefields sur lesquels on perd le plus.
 4. Comebacks (exemple : gagner une partie où on était mené 2-5).
 
-Toutes se calculent à partir des `score_events` et des infos de game. Aucun score final n'est stocké en dur.
+Toutes se calculent à partir des `score_events` et des infos de game, à chaque appel de `GET /api/stats` (pas de cache : le groupe est petit). Un comeback = une game gagnée après avoir été mené d'au moins 3 points.
 
 ## 4. Données de référence : Riftcodex
 
@@ -135,7 +135,12 @@ Les tables `match_players` et `game_players` remplacent les colonnes « moi / ad
    - fin de match : résumé, « Revanche », envoi automatique via la file d'envoi ;
    - le match en cours est sauvegardé sur le téléphone à chaque point : fermer l'appli ou recharger ne perd rien ;
    - vérifié de bout en bout (Bo3 complet, rechargement en cours de game, envoi au serveur).
-4. **Historique et stats** sur PC.
+4. **Historique et stats** ✅ (2026-11-26) :
+   - historique filtrable (les miens ou tout le groupe, format, légende, résultat) ;
+   - détail d'un match : courbe du score et frise des points de chaque game, points par type, battlefields, mulligans, notes ; les joueurs du match peuvent compléter ces détails ou supprimer le match ;
+   - `GET /api/stats?userId=` calculé à partir des points stockés, et page Stats : winrate contre chaque légende en commençant ou non, répartition Conquer / Hold / Ability marqués et encaissés, battlefields les plus perdus (les siens et ceux de l'adversaire), comebacks (gagner après avoir été mené de 3 points ou plus) ;
+   - couleurs des graphiques vérifiées (daltonisme, contraste) pour chaque thème ;
+   - sur téléphone, l'onglet Decks laisse sa place à Stats (Decks reste sur PC).
 5. **Deck builder**.
 6. **Saisie manuelle** pour les tournois en ligne.
 7. *Plus tard* : import Riftatlas (vérifier d'abord l'API et les conditions d'utilisation), 2v2.
@@ -157,6 +162,8 @@ La branche git `Post-Uni` sera fusionnée dans `main` en **gardant tous ses comm
 7. Chaque migration est d'abord testée sur la **branche Neon `v2`**, jamais directement sur la prod.
 
 **Déploiement**
+
+0. Avant le merge, la v2 se teste en **préprod** : services Render construits depuis `Post-Uni`, branchés sur la branche Neon `v2` (voir `DEPLOY.md`). La prod ne bouge pas.
 
 8. Render redéploie à chaque push sur `main` : **merger, c'est mettre en prod**, et la V3 s'applique automatiquement à la base de prod.
 9. Avant le merge, il faut :

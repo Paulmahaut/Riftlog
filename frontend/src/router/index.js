@@ -11,6 +11,8 @@ const routes = [
     // Full screen, no navigation: the phone lies on the table between the two players.
     { path: "/play/duel", name: "duel", component: () => import("../views/DuelView.vue"), meta: { title: "Duel", fullscreen: true } },
     { path: "/matches", name: "matches", component: () => import("../views/MatchesView.vue"), meta: { title: "Matchs" } },
+    { path: "/matches/:id", name: "match", component: () => import("../views/MatchDetailView.vue"), meta: { title: "Match", section: "matches" } },
+    { path: "/stats", name: "stats", component: () => import("../views/StatsView.vue"), meta: { title: "Stats" } },
     { path: "/decks", name: "decks", component: () => import("../views/DecksView.vue"), meta: { title: "Decks" } },
     { path: "/settings", name: "settings", component: () => import("../views/SettingsView.vue"), meta: { title: "Réglages" } },
     { path: "/:pathMatch(.*)*", redirect: "/" },

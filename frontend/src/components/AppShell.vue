@@ -11,13 +11,19 @@ import { network } from "../lib/sync.js";
 
 const route = useRoute();
 
+// mobile: false = PC sidebar only (5 tabs is the most a phone bar holds comfortably).
 const NAV = [
     { to: "/", name: "home", label: "Accueil", icon: "home" },
     { to: "/matches", name: "matches", label: "Matchs", icon: "matches" },
     { to: "/play", name: "play", label: "Jouer", icon: "play", primary: true },
-    { to: "/decks", name: "decks", label: "Decks", icon: "decks" },
+    { to: "/stats", name: "stats", label: "Stats", icon: "stats" },
+    { to: "/decks", name: "decks", label: "Decks", icon: "decks", mobile: false },
     { to: "/settings", name: "settings", label: "Réglages", icon: "settings" },
 ];
+const MOBILE_NAV = NAV.filter((item) => item.mobile !== false);
+
+/** A sub-page (a match's detail) keeps its section highlighted. */
+const section = computed(() => route.meta.section ?? route.name);
 
 const loginAgain = computed(() => ({
     name: "login",
@@ -39,8 +45,8 @@ const loginAgain = computed(() => ({
                     :key="item.name"
                     :to="item.to"
                     class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-fg"
-                    :class="{ '!bg-surface-2 !text-fg': route.name === item.name }"
-                    :aria-current="route.name === item.name ? 'page' : undefined"
+                    :class="{ '!bg-surface-2 !text-fg': section === item.name }"
+                    :aria-current="section === item.name ? 'page' : undefined"
                 >
                     <AppIcon :name="item.icon" class="size-5" />
                     {{ item.label }}
@@ -93,12 +99,12 @@ const loginAgain = computed(() => ({
                 aria-label="Navigation principale"
             >
                 <RouterLink
-                    v-for="item in NAV"
+                    v-for="item in MOBILE_NAV"
                     :key="item.name"
                     :to="item.to"
                     class="flex flex-col items-center gap-1 py-2 text-[11px] font-medium text-muted"
-                    :class="{ '!text-fg': route.name === item.name }"
-                    :aria-current="route.name === item.name ? 'page' : undefined"
+                    :class="{ '!text-fg': section === item.name }"
+                    :aria-current="section === item.name ? 'page' : undefined"
                 >
                     <span
                         class="grid size-8 place-items-center"
