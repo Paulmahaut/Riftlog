@@ -1,4 +1,5 @@
-# Riftlog
+# Riftlog : The school project is version 0.1, available under releases.⚠️⚠️
+
 
 **CardQuest** — Mobile-first web application for tracking **Riftbound TCG** match history.
 
